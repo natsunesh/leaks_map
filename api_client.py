@@ -1,5 +1,5 @@
 import requests
-from src.utils import validate_email
+from utils import validate_email
 import logging
 from typing import List, Dict, Optional
 import re

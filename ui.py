@@ -3,10 +3,10 @@ import os
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QMessageBox, QMainWindow, QLabel, QLineEdit, QTextEdit
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from src.utils import get_user_email
-from src.api_client import LeakCheckAPIClient
-from src.visualizer_breaches import visualize_breaches_with_info
-from src.recommendations import print_recommendations_for_breaches
+from utils import get_user_email
+from api_client import LeakCheckAPIClient
+from  visualizer_breaches import visualize_breaches_with_info
+from  recommendations import print_recommendations_for_breaches
 from datetime import datetime
 from typing import List, Dict
 

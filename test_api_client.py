@@ -1,16 +1,16 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 
 import unittest
 from unittest.mock import patch, MagicMock
-from src.api_client import LeakCheckAPIClient
+from api_client import LeakCheckAPIClient
 from typing import List, Dict
 
 class TestLeakCheckAPIClient(unittest.TestCase):
 
-    @patch('src.api_client.requests.get')
+    @patch('api_client.requests.get')
     def test_get_breach_info(self, mock_get):
         """Test retrieving breach information for a given email."""
         mock_response = MagicMock()
@@ -29,4 +29,3 @@ class TestLeakCheckAPIClient(unittest.TestCase):
         self.assertEqual(len(breaches), 2)
         self.assertEqual(breaches[0]['service_name'], 'Service1')
         self.assertEqual(breaches[1]['service_name'], 'Service2')
-

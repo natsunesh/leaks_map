@@ -1,12 +1,12 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 
 import unittest
 from unittest.mock import patch, MagicMock
 from PySide6.QtWidgets import QApplication
-from src.ui import LeakMapGUI
+from ui import LeakMapGUI
 from typing import List, Dict
 
 class TestLeakMapGUI(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestLeakMapGUI(unittest.TestCase):
         if self.app is None:
             self.app = QApplication([])
 
-    @patch('src.ui.LeakCheckAPIClient')
+    @patch('ui.LeakCheckAPIClient')
     def test_check_leaks(self, MockAPIClient):
         """
         Test checking for leaks in the GUI.
@@ -34,7 +34,7 @@ class TestLeakMapGUI(unittest.TestCase):
         print(mock_api_client.mock_calls)  # Debugging mock calls
         self.assertIn('Found 2 breaches for test@example.com.', gui.result_text.toPlainText())
 
-    @patch('src.ui.LeakCheckAPIClient')
+    @patch('ui.LeakCheckAPIClient')
     def test_export_report(self, MockAPIClient):
         """
         Test exporting a report in the GUI.

@@ -7,7 +7,7 @@ from typing import Dict
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.ui import LeakMapGUI
+from ui import LeakMapGUI
 
 CACHE_DIR = "cache"
 if not os.path.exists(CACHE_DIR):

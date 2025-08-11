@@ -3,7 +3,7 @@ from bokeh.models import MultiLine, Scatter, LabelSet, ColumnDataSource, HoverTo
 from bokeh.plotting import figure, from_networkx, show, output_file
 from bokeh.models import CustomJS, Div
 from bokeh.layouts import row
-from src.recommendations import print_recommendations_for_breaches, generate_recommendations
+from recommendations import print_recommendations_for_breaches, generate_recommendations
 from typing import List, Dict
 
 def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:

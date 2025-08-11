@@ -1,10 +1,10 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 
 import unittest
-from src.parser import parse_data
+from parser import parse_data
 from typing import List, Dict, Any
 
 class TestParser(unittest.TestCase):
