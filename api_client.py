@@ -58,9 +58,12 @@ class LeakCheckAPIClient:
         if cached_data:
             return cached_data
 
+        
+        
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=timeout)
             response.raise_for_status()
+            logger.debug(f"Received response: {response.status_code} - {response.text}")
         except requests.exceptions.Timeout:
             logger.error(f"Timeout expired for email {email} when accessing LeakCheck API")
             return []

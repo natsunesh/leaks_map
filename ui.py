@@ -75,10 +75,13 @@ class LeakMapGUI(QMainWindow):
 
         try:
             breaches = self.api_client.get_breach_info(email)
-            if breaches:
+            if breaches and breaches.get("Found", 0) > 0:
                 self.result_text.append(f"Found {len(breaches)} breaches for {email}.")
                 visualize_breaches_with_info(breaches)
                 print_recommendations_for_breaches(breaches, "Russian")
+                sources = breaches.get("Sources", [])
+                if sources:
+                    self.result_text.append(f"Sources: {', '.join(sources)}")
             else:
                 self.result_text.append(f"No breaches found for {email}.")
         except Exception as e:

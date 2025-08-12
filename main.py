@@ -65,6 +65,20 @@ def main():
     window = LeakMapGUI()
     window.show()
     print("Application started.")
+    print("Checking API response status...")
+    api_client = window.api_client
+    email = "test@example.com"  # Example email for testing
+    breaches = api_client.get_breach_info(email)
+    if breaches:
+        print("API accepted data from the website.")
+        print(json.dumps({
+            "success": True,
+            "found": len(breaches),
+            "fields": [],
+            "sources": [{"name": breach["service_name"], "date": breach["breach_date"]} for breach in breaches]
+        }, indent=4))
+    else:
+        print("API did not accept data from the website.")
     sys.exit(app.exec())
 
 if __name__ == "__main__":
