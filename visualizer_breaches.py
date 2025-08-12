@@ -173,3 +173,5 @@ def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:
         plot.y_range.start = -2
         plot.y_range.end = 2
         graph_renderer.node_renderer.glyph.size = 10
+
+    return G

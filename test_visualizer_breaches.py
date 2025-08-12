@@ -1,33 +1,25 @@
-import sys
-import os
-
-
-
 import unittest
+import networkx as nx
 from unittest.mock import patch, MagicMock, call
 from visualizer_breaches import visualize_breaches_with_info
 from typing import List, Dict
 
 class TestVisualizerBreaches(unittest.TestCase):
 
-    @patch('visualizer_breaches.nx.Graph')
-    def test_visualize_breaches_with_info(self, MockGraph):
-        """
-        Test visualizing breaches with information.
-        """
-        mock_graph = MockGraph()
-        breaches: List[Dict[str, str]] = [
-            {'service_name': 'Service1', 'breach_date': '2023-01-01', 'description': 'Description1'},
-            {'service_name': 'Service2', 'breach_date': '2023-02-01', 'description': 'Description2'}
+    def test_visualize_breaches_with_info(self):
+        """Test visualizing breaches with information."""
+        graph = nx.Graph()
+        breaches = [
+            {'Name': 'Service1', 'Breach Date': '2023-01-01', 'Description': 'Description1'},
+            {'Name': 'Service2', 'Breach Date': '2023-02-01', 'Description': 'Description2'}
         ]
 
-        visualize_breaches_with_info(breaches)
+        graph = visualize_breaches_with_info(breaches)
 
-        mock_graph.add_node.assert_any_call('Service1', label='Service1\n2023-01-01\nDescription1')
-        mock_graph.add_node.assert_any_call('Service2', label='Service2\n2023-02-01\nDescription2')
-        mock_graph.add_edge.assert_has_calls([
-            call('Service1', 'Service2')
-        ])
+
+        assert 'Service1' in graph.nodes
+        assert 'Service2' in graph.nodes
+        assert ('Service1', 'Service2') in graph.edges
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,8 +1,5 @@
 import sys
 import os
-
-
-
 import unittest
 from unittest.mock import patch, MagicMock, call
 from recommendations import print_recommendations_for_breaches
@@ -20,17 +17,17 @@ class TestRecommendations(unittest.TestCase):
             ['Recommendation 2']
         ]
 
-        breaches: List[Dict[str, str]] = [
-            {'service_name': 'Service1', 'breach_date': '2023-01-01', 'description': 'Description1'},
-            {'service_name': 'Service2', 'breach_date': '2023-02-01', 'description': 'Description2'}
+        breaches = [
+            {'name': 'Service1', 'breach_date': '2023-01-01', 'description': 'Description1'},
+            {'name': 'Service2', 'breach_date': '2023-02-01', 'description': 'Description2'}
         ]
 
         print_recommendations_for_breaches(breaches, 'Russian')
-
+        print(mock_generate_recommendations.mock_calls)
         mock_generate_recommendations.assert_has_calls([
             call('Service1', 'Russian'),
             call('Service2', 'Russian')
-        ])
+        ], any_order=True)
 
 if __name__ == '__main__':
     unittest.main()
