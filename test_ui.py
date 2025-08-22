@@ -30,8 +30,10 @@ class TestLeakMapGUI(unittest.TestCase):
         gui = LeakMapGUI()
         gui.email_input.setText('test@example.com')
         gui.check_leaks()
+        QApplication.processEvents()
 
         print(mock_api_client.mock_calls)  # Debugging mock calls
+        print(gui.result_text.toPlainText())  # Debugging statement
         self.assertIn('Found 2 breaches for test@example.com.', gui.result_text.toPlainText())
 
     @patch('ui.LeakCheckAPIClient')

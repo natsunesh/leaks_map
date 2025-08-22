@@ -68,6 +68,7 @@ class LeakMapGUI(QMainWindow):
         """
         Check for data breaches associated with the entered email address.
         """
+        print("check_leaks method called")  # Debugging statement
         email = self.email_input.text()
         if not email:
             QMessageBox.warning(self, "Input Error", "Please enter a valid email address.")
@@ -75,13 +76,17 @@ class LeakMapGUI(QMainWindow):
 
         try:
             breaches = self.api_client.get_breach_info(email)
-            if breaches and breaches.get("Found", 0) > 0:
-                self.result_text.append(f"Found {len(breaches)} breaches for {email}.")
+            count = len(breaches)
+            if count > 0:
+                result_message = f"Found {count} breaches for {email}."
+
+                for breach in breaches:
+                    result_message += f"\nService: {breach['service_name']} on {breach['breach_date']} - {breach['description']}"
+                    
+                self.result_text.setPlainText(result_message)
                 visualize_breaches_with_info(breaches)
                 print_recommendations_for_breaches(breaches, "Russian")
-                sources = breaches.get("Sources", [])
-                if sources:
-                    self.result_text.append(f"Sources: {', '.join(sources)}")
+                
             else:
                 self.result_text.append(f"No breaches found for {email}.")
         except Exception as e:
