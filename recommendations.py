@@ -15,10 +15,7 @@ def generate_recommendations(service: str, language: str) -> List[str]:
                 "Включите двухфакторную аутентификацию.",
                 "Используйте уникальные пароли для каждого сервиса."
             ],
-            "Evony.com": [
-                "Измените пароль для Evony.com.",
-                "Проверьте, не используете ли вы этот пароль для других сервисов."
-            ],
+            
             "Unknown": [
                 "Измените пароль для этого сервиса.",
                 "Проверьте, не используете ли вы этот пароль для других сервисов."
@@ -30,10 +27,7 @@ def generate_recommendations(service: str, language: str) -> List[str]:
                 "Enable two-factor authentication.",
                 "Use unique passwords for each service."
             ],
-            "Evony.com": [
-                "Change your password for Evony.com.",
-                "Check if you use this password for other services."
-            ],
+            
             "Unknown": [
                 "Change your password for this service.",
                 "Check if you use this password for other services."
