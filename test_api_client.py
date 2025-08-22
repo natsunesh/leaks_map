@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, Mock
 from api_client import LeakCheckAPIClient
-
+import requests
 class TestLeakCheckAPIClient(unittest.TestCase):
 
     def setUp(self):
