@@ -1,5 +1,3 @@
-
-
 from typing import List, Dict, Any
 
 def parse_data(raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

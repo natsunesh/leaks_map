@@ -23,9 +23,9 @@ def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:
 
     # Populate the graph and gather node information
     for breach in breaches:
-        name = breach.get('Name', 'Unknown')
-        date = breach.get('Breach Date', 'Unknown')
-        desc = breach.get('Description', 'No description')
+        name = breach.get('service', 'Unknown')
+        date = breach.get('breach_date', 'Unknown')
+        desc = breach.get('description', 'No description')
 
         if name not in G:
             G.add_node(name, label=f'{name}\n{date}\n{desc}')
@@ -37,8 +37,8 @@ def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:
     # Add edges between nodes
     for i in range(len(breaches)):
         for j in range(i + 1, len(breaches)):
-            name_i = breaches[i].get('Name', 'Unknown')
-            name_j = breaches[j].get('Name', 'Unknown')
+            name_i = breaches[i].get('service', 'Unknown')
+            name_j = breaches[j].get('service', 'Unknown')
             if name_i != name_j:
                 G.add_edge(name_i, name_j)
 

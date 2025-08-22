@@ -58,31 +58,32 @@ class LeakCheckAPIClient:
         if cached_data:
             return cached_data
 
-        
-        
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=timeout)
             response.raise_for_status()
             logger.debug(f"Received response: {response.status_code} - {response.text}")
         except requests.exceptions.Timeout:
             logger.error(f"Timeout expired for email {email} when accessing LeakCheck API")
-            return []
+            raise TimeoutError(f"Timeout expired for email {email} when accessing LeakCheck API")
         except requests.exceptions.ConnectionError:
             logger.error(f"Connection error for email {email} when accessing LeakCheck API")
-            return []
+            raise ConnectionError(f"Connection error for email {email} when accessing LeakCheck API")
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
                 logger.error(f"Resource not found for email {email}")
+                raise ValueError(f"Resource not found for email {email}")
             elif response.status_code == 429:
                 logger.error(f"Rate limit exceeded for email {email}")
+                raise ValueError(f"Rate limit exceeded for email {email}")
             elif response.status_code == 500:
                 logger.error(f"Internal server error for email {email}")
+                raise ValueError(f"Internal server error for email {email}")
             else:
                 logger.error(f"HTTP error {response.status_code} for email {email}: {err}")
-            return []
+                raise ValueError(f"HTTP error {response.status_code} for email {email}: {err}")
         except requests.exceptions.RequestException as err:
             logger.error(f"Unexpected error for email {email}: {err}", exc_info=True)
-            return []
+            raise ValueError(f"Unexpected error for email {email}: {err}")
 
         try:
             data = response.json()
@@ -94,9 +95,9 @@ class LeakCheckAPIClient:
             logger.info(f"LeakCheck API returned success=false for email {email}")
             return data.get("data", []) if data.get("data") else []
         else:
-            return data.get("data", [])
+            results = data.get("data", [])
 
-        if data.get("found", 0) < 1:
+        if not results:
             logger.info(f"No breaches found for email {email}")
             return []
 
@@ -105,10 +106,9 @@ class LeakCheckAPIClient:
             logger.error(f"Malformed 'sources' data for email {email}")
             return []
 
-        # Стандартизируем формат вывода
+        # Standardize the output format
         results = []
         for source in sources:
-            # Ожидается объект вроде {"name": "Evony.com", "date": "2016-07"}
             name = source.get("name")
             date = source.get("date")
 
@@ -144,23 +144,26 @@ class LeakCheckAPIClient:
             response.raise_for_status()
         except requests.exceptions.Timeout:
             logger.error(f"Timeout expired for username {username} when accessing LeakCheck API")
-            return []
+            raise TimeoutError(f"Timeout expired for username {username} when accessing LeakCheck API")
         except requests.exceptions.ConnectionError:
             logger.error(f"Connection error for username {username} when accessing LeakCheck API")
-            return []
+            raise ConnectionError(f"Connection error for username {username} when accessing LeakCheck API")
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
                 logger.error(f"Resource not found for username {username}")
+                raise ValueError(f"Resource not found for username {username}")
             elif response.status_code == 429:
                 logger.error(f"Rate limit exceeded for username {username}")
+                raise ValueError(f"Rate limit exceeded for username {username}")
             elif response.status_code == 500:
                 logger.error(f"Internal server error for username {username}")
+                raise ValueError(f"Internal server error for username {username}")
             else:
                 logger.error(f"HTTP error {response.status_code} for username {username}: {err}")
-            return []
+                raise ValueError(f"HTTP error {response.status_code} for username {username}: {err}")
         except requests.exceptions.RequestException as err:
             logger.error(f"Unexpected error for username {username}: {err}", exc_info=True)
-            return []
+            raise ValueError(f"Unexpected error for username {username}: {err}")
 
         try:
             data = response.json()
@@ -181,10 +184,9 @@ class LeakCheckAPIClient:
             logger.error(f"Malformed 'sources' data for username {username}")
             return []
 
-        # Стандартизируем формат вывода
+        # Standardize the output format
         results = []
         for source in sources:
-            # Ожидается объект вроде {"name": "Evony.com", "date": "2016-07"}
             name = source.get("name")
             date = source.get("date")
 

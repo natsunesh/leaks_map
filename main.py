@@ -43,8 +43,7 @@ def save_cache(email: str, data: Dict[str, str]) -> None:
     """
     Save the cache data for a given email.
 
-    :param email: The email address to save the cache data 
-    for.
+    :param email: The email address to save the cache data for.
     :param data: The cache data to save.
     """
     cache_file = get_cache_file_path(email)

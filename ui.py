@@ -5,8 +5,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from utils import get_user_email
 from api_client import LeakCheckAPIClient
-from  visualizer_breaches import visualize_breaches_with_info
-from  recommendations import print_recommendations_for_breaches
+from visualizer_breaches import visualize_breaches_with_info
+from recommendations import print_recommendations_for_breaches
 from datetime import datetime
 from typing import List, Dict
 
@@ -81,16 +81,24 @@ class LeakMapGUI(QMainWindow):
                 result_message = f"Found {count} breaches for {email}."
 
                 for breach in breaches:
-                    result_message += f"\nService: {breach['service_name']} on {breach['breach_date']} - {breach['description']}"
-                    
+                    result_message += f"\nService: {breach['service']} on {breach['breach_date']} - {breach['description']}"
+
                 self.result_text.setPlainText(result_message)
+                QApplication.processEvents()
                 visualize_breaches_with_info(breaches)
                 print_recommendations_for_breaches(breaches, "Russian")
-                
+
             else:
-                self.result_text.append(f"No breaches found for {email}.")
+                self.result_text.setPlainText(f"No breaches found for {email}.")
+                QApplication.processEvents()
+        except TimeoutError as e:
+            QMessageBox.critical(self, "Timeout Error", f"Request timed out: {str(e)}")
+        except ConnectionError as e:
+            QMessageBox.critical(self, "Connection Error", f"Failed to connect to the server: {str(e)}")
+        except ValueError as e:
+            QMessageBox.critical(self, "Value Error", f"Invalid data received: {str(e)}")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred while checking for breaches: {str(e)}")
+            QMessageBox.critical(self, "Unexpected Error", f"An unexpected error occurred: {str(e)}")
 
     def export_report(self):
         """
@@ -107,7 +115,7 @@ class LeakMapGUI(QMainWindow):
                 report_filename = f"{email}_report.txt"
                 with open(report_filename, "w") as report_file:
                     for breach in breaches:
-                        report_file.write(f"Service: {breach['service_name']}\n")
+                        report_file.write(f"Service: {breach['service']}\n")
                         report_file.write(f"Breach Date: {breach['breach_date']}\n")
                         report_file.write(f"Description: {breach['description']}\n")
                         report_file.write("\n")
