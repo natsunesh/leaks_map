@@ -1,6 +1,7 @@
 import networkx as nx
 from bokeh.models import MultiLine, Scatter, LabelSet, ColumnDataSource, HoverTool
 from bokeh.plotting import figure, from_networkx, show, output_file
+from PyQt5.QtWidgets import QApplication
 from bokeh.models import CustomJS, Div
 from bokeh.layouts import row
 from recommendations import print_recommendations_for_breaches, generate_recommendations
@@ -23,7 +24,7 @@ def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:
 
     # Populate the graph and gather node information
     for breach in breaches:
-        name = breach.get('service', 'Unknown')
+        name = breach.get('service_name', 'Unknown')
         date = breach.get('breach_date', 'Unknown')
         desc = breach.get('description', 'No description')
 
@@ -37,8 +38,8 @@ def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:
     # Add edges between nodes
     for i in range(len(breaches)):
         for j in range(i + 1, len(breaches)):
-            name_i = breaches[i].get('service', 'Unknown')
-            name_j = breaches[j].get('service', 'Unknown')
+            name_i = breaches[i].get('service_name', 'Unknown')
+            name_j = breaches[j].get('service_name', 'Unknown')
             if name_i != name_j:
                 G.add_edge(name_i, name_j)
 
@@ -173,5 +174,8 @@ def visualize_breaches_with_info(breaches: List[Dict[str, str]]) -> None:
         plot.y_range.start = -2
         plot.y_range.end = 2
         graph_renderer.node_renderer.glyph.size = 10
+
+    # Call QApplication.processEvents() to update the interface
+    QApplication.processEvents()
 
     return G

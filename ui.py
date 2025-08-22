@@ -81,7 +81,7 @@ class LeakMapGUI(QMainWindow):
                 result_message = f"Found {count} breaches for {email}."
 
                 for breach in breaches:
-                    result_message += f"\nService: {breach['service']} on {breach['breach_date']} - {breach['description']}"
+                    result_message += f"\nService: {breach['service_name']} on {breach['breach_date']} - {breach['description']}"
 
                 self.result_text.setPlainText(result_message)
                 QApplication.processEvents()
@@ -115,7 +115,7 @@ class LeakMapGUI(QMainWindow):
                 report_filename = f"{email}_report.txt"
                 with open(report_filename, "w") as report_file:
                     for breach in breaches:
-                        report_file.write(f"Service: {breach['service']}\n")
+                        report_file.write(f"Service: {breach['service_name']}\n")
                         report_file.write(f"Breach Date: {breach['breach_date']}\n")
                         report_file.write(f"Description: {breach['description']}\n")
                         report_file.write("\n")

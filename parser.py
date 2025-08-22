@@ -48,7 +48,7 @@ def parse_data(raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         seen.add(key)
 
         parsed_results.append({
-            "service": service,
+            "service_name": service,
             "breach_date": breach_date,
             "data_types": data_classes,
             "description": description

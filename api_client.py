@@ -93,30 +93,24 @@ class LeakCheckAPIClient:
 
         if not data.get("success", False):
             logger.info(f"LeakCheck API returned success=false for email {email}")
-            return data.get("data", []) if data.get("data") else []
+            return []
         else:
-            results = data.get("data", [])
+            results = data.get("sources", [])
 
         if not results:
             logger.info(f"No breaches found for email {email}")
             return []
-
-        sources = data.get("sources", [])
-        if not isinstance(sources, list):
-            logger.error(f"Malformed 'sources' data for email {email}")
-            return []
-
-        # Standardize the output format
-        results = []
-        for source in sources:
-            name = source.get("name")
-            date = source.get("date")
-
-            results.append({
-                "service_name": name or "Unknown",
-                "breach_date": date or "Unknown",
-                "description": f"Data breach detected at {name}" if name else "Data breach detected"
-            })
+        else:
+            standardized_results = []
+            for source in results:
+                name = source.get("name")
+                date = source.get("date")
+                standardized_results.append({
+                    "service_name": name or "Unknown",
+                    "breach_date": date or "Unknown",
+                    "description": f"Data breach detected at {name}" if name else "Data breach detected"
+                })
+            results = standardized_results
 
         self.cache_manager.set(self.BASE_URL, params, results)
         return results
