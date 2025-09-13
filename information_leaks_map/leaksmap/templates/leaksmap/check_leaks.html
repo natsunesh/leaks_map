@@ -1,0 +1,51 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Check Leaks{% endblock %}
+
+{% block content %}
+    <h1>Check for Data Breaches</h1>
+    <form id="check-leaks-form" method="post">
+        {% csrf_token %}
+        <label for="email">Enter your email:</label>
+        <input type="email" id="email" name="email" required>
+        <button type="submit">Check for Leaks</button>
+    </form>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('check-leaks-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+
+            fetch('/leaksmap/check_leaks/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'email': email
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                if (data.error) {
+                    resultsDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                } else if (data.breaches) {
+                    let resultsHtml = '<h2>Breaches Found:</h2><ul>';
+                    data.breaches.forEach(breach => {
+                        resultsHtml += `<li>Service: ${breach.service_name}, Date: ${breach.breach_date}, Description: ${breach.description}</li>`;
+                    });
+                    resultsHtml += '</ul>';
+                    resultsDiv.innerHTML = resultsHtml;
+                } else {
+                    resultsDiv.innerHTML = '<p>No breaches found.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+{% endblock %}
