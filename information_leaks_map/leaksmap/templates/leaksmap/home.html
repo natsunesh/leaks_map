@@ -5,26 +5,22 @@
 {% block content %}
     <h1>Добро пожаловать!</h1>
     <p>Начальная страница</p>
-    <a href="{% url 'visualize_breaches' %}">Просмотреть визуализацию утечек</a>
-    <a href="{% url 'results' %}">Просмотреть результаты</a>
-    <a href="{% url 'register' %}">Зарегистрироваться</a>
-    <a href="{% url 'login' %}">Войти</a>
-    <a href="{% url 'profile' %}">Профиль</a>
-    <a href="{% url 'settings' %}">Настройки</a>
-    <a href="{% url 'feedback' %}">Оставить отзыв</a>
-    <a href="{% url 'view_feedback' %}">Просмотреть отзывы</a>
-    <a href="{% url 'notifications' %}">Уведомления</a>
-    <a href="{% url 'generate_report' %}">Сгенерировать отчет</a>
-    <a href="{% url 'analytics' %}">Аналитика</a>
-    <a href="{% url 'create_ticket' %}">Создать тикет поддержки</a>
-    <a href="{% url 'view_tickets' %}">Просмотреть тикеты</a>
-    <a href="{% url 'notifications' %}">Уведомления</a>
-    <a href="{% url 'feedback' %}">Оставить отзыв</a>
-    <a href="{% url 'view_feedback' %}">Просмотреть отзывы</a>
-    <a href="{% url 'generate_report' %}">Сгенерировать отчет</a>
-    <a href="{% url 'analytics' %}">Аналитика</a>
-    <a href="{% url 'create_ticket' %}">Создать тикет поддержки</a>
-    <a href="{% url 'view_tickets' %}">Просмотреть тикеты</a>
+    <p>Используйте следующие функции для работы с приложением:</p>
+    <ul>
+        <li><a href="{% url 'visualize_breaches' %}">Просмотреть визуализацию утечек</a></li>
+        <li><a href="{% url 'results' %}">Просмотреть результаты</a></li>
+        <li><a href="{% url 'register' %}">Зарегистрироваться</a></li>
+        <li><a href="{% url 'login' %}">Войти</a></li>
+        <li><a href="{% url 'profile' %}">Профиль</a></li>
+        <li><a href="{% url 'settings' %}">Настройки</a></li>
+        <li><a href="{% url 'feedback' %}">Оставить отзыв</a></li>
+        <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
+        <li><a href="{% url 'notifications' %}">Уведомления</a></li>
+        <li><a href="{% url 'generate_report' %}">Сгенерировать отчет</a></li>
+        <li><a href="{% url 'analytics' %}">Аналитика</a></li>
+        <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
+        <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
+    </ul>
 
     <h2>Проверка утечек</h2>
     <form id="check-leaks-form" method="post">

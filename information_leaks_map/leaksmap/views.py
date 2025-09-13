@@ -18,24 +18,31 @@ def check_leaks(request):
         if not validate_email(email):
             return JsonResponse({'error': 'Invalid email address'}, status=400)
 
-        api_client = LeakCheckAPIClient(api_key=os.getenv("API_KEY", "ace07ec3058ee59cabf16c86b0d2e5842060ee41"))
+        api_key = os.getenv("API_KEY")
+        if not api_key:
+            return JsonResponse({'error': 'API key not configured'}, status=500)
+        api_client = LeakCheckAPIClient(api_key=api_key)
+        # Get breach information from the API
         breaches = api_client.get_breach_info(email)
 
+        # Check if breaches are found
         if breaches:
+            # Save each breach to the database
             for breach in breaches:
                 Breach.objects.create(
                     service_name=breach['service_name'],
                     breach_date=breach['breach_date'],
                     description=breach['description']
                 )
-            # Send notifications
+            # Send notifications to the user
             notification_message = f"New data breach detected for email: {email}"
             notify_user(email, notification_message)
-            # Generate recommendations and help
+            # Generate recommendations and security advice
             checklist = generate_checklist(email)
             security_advice = get_security_advice()
             return JsonResponse({'breaches': breaches, 'checklist': checklist, 'security_advice': security_advice})
         else:
+            # Return a message if no breaches are found
             return JsonResponse({'message': 'No breaches found'}, status=200)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -45,16 +52,19 @@ def export_report(request):
         if not validate_email(email):
             return JsonResponse({'error': 'Invalid email address'}, status=400)
 
-        breaches = Breach.objects.filter(service_name__icontains=email)
-        if breaches.exists():
-            format = request.POST.get('format', 'pdf')
-            if format == 'pdf':
-                return generate_pdf_report(breaches)
-            elif format == 'html':
-                return generate_html_report(breaches)
+        try:
+            breaches = Breach.objects.select_related().filter(email=email)
+            if breaches.exists():
+                format = request.POST.get('format', 'pdf')
+                if format == 'pdf':
+                    return generate_pdf_report(breaches)
+                elif format == 'html':
+                    return generate_html_report(breaches)
+                else:
+                    return JsonResponse({'error': 'Unsupported format'}, status=400)
             else:
-                return JsonResponse({'error': 'Unsupported format'}, status=400)
-        else:
+                return JsonResponse({'message': 'No breaches found to export'}, status=200)
+        except Breach.DoesNotExist:
             return JsonResponse({'message': 'No breaches found to export'}, status=200)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 

@@ -7,9 +7,16 @@ class Breach(models.Model):
     location = models.CharField(max_length=255, blank=True, null=True)
     data_type = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
+    email = models.EmailField()
 
     def __str__(self):
-        return f"{self.service_name} - {self.breach_date}"
+        return f"{self.service_name} - {self.breach_date} - {self.email}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['service_name']),
+        ]
 
 class AnalyticsData(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

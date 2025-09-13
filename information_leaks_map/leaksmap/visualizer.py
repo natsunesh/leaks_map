@@ -9,7 +9,13 @@ import pandas as pd
 
 def create_breach_visualization():
     # Fetch data from the database
-    breaches = Breach.objects.all()
+    try:
+        breaches = Breach.objects.all()
+        if not breaches.exists():
+            return None
+    except Breach.DoesNotExist:
+        return None
+
     data = {
         'service_name': [breach.service_name for breach in breaches],
         'breach_date': [breach.breach_date for breach in breaches],
@@ -31,7 +37,7 @@ def create_breach_visualization():
     p.line(x='breach_date', y='service_name', source=source, line_width=2, line_alpha=0.6)
 
     # Add circles for each breach
-    p.circle(x='breach_date', y='service_name', source=source, size=10, color='navy', alpha=0.5)
+    p.circle(x='breach_date', y='service_name', source=source, radius=10, color='navy', alpha=0.5)
 
     # Add HoverTool
     hover = HoverTool()
@@ -56,4 +62,6 @@ def create_breach_visualization():
     return p
 
 # Add the visualization to the current document
-curdoc().add_root(column(create_breach_visualization()))
+visualization = create_breach_visualization()
+if visualization:
+    curdoc().add_root(column(visualization))
