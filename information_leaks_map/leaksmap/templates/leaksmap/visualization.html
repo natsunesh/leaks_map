@@ -1,0 +1,10 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Breach Visualization{% endblock %}
+
+{% block content %}
+    <h1>Breach Visualization</h1>
+    <div id="visualization">
+        {{ visualization|safe }}
+    </div>
+{% endblock %}

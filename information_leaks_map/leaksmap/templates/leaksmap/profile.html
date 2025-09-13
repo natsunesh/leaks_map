@@ -1,0 +1,20 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+    <h1>Profile</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="first_name">First Name:</label>
+        <input type="text" id="first_name" name="first_name" value="{{ user_profile.first_name }}">
+        <label for="last_name">Last Name:</label>
+        <input type="text" id="last_name" name="last_name" value="{{ user_profile.last_name }}">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" value="{{ user_profile.email }}">
+        <button type="submit">Save</button>
+    </form>
+    {% if success %}
+    <p style="color: green;">Profile updated successfully!</p>
+    {% endif %}
+{% endblock %}

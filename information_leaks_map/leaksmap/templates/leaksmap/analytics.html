@@ -1,0 +1,12 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+    <h1>Analytics</h1>
+    <ul>
+        {% for data in analytics_data %}
+        <li>{{ data.date }}: {{ data.value }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -8,21 +8,20 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-    <header>
-        <h1>Leak Map</h1>
-        <nav>
-            <ul>
-                <li><a href="{% url 'check_leaks' %}">Check Leaks</a></li>
-                <li><a href="{% url 'export_report' %}">Export Report</a></li>
-            </ul>
-        </nav>
+    <aside>
+        <img src="{% static 'main/img/logo.png' %}" alt="">
+
+        <h1>Карта информационных утечек</h1>
+
+        <ul>
+            <li><a href="{% url 'check_leaks' %}">проверить утечку</a></li>
+            <li><a href="{% url 'export_report' %}">Export Report</a></li>
+        </ul>
     </header>
     <main>
         {% block content %}
         {% endblock %}
     </main>
-    <footer>
-        <p>&copy; 2025 Leak Map. All rights reserved.</p>
-    </footer>
+    
 </body>
 </html>

@@ -1,0 +1,16 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}View Tickets{% endblock %}
+
+{% block content %}
+    <h1>View Tickets</h1>
+    <ul>
+        {% for ticket in tickets %}
+        <li>
+            <h2>{{ ticket.title }}</h2>
+            <p>{{ ticket.description }}</p>
+            <p>Created at: {{ ticket.created_at }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

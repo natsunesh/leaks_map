@@ -1,0 +1,13 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Feedback{% endblock %}
+
+{% block content %}
+    <h1>Submit Feedback</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="feedback">Feedback:</label>
+        <textarea id="feedback" name="feedback" rows="4" cols="50"></textarea>
+        <button type="submit">Submit Feedback</button>
+    </form>
+{% endblock %}

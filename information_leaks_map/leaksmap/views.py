@@ -3,6 +3,10 @@ from django.http import JsonResponse, HttpResponse
 from .models import Breach
 from .utils import validate_email
 from .api_client import LeakCheckAPIClient
+from .visualizer import create_breach_visualization
+from .notifications import notify_user
+from .recommendations import generate_checklist, get_security_advice
+from .export import generate_pdf_report, generate_html_report
 import os
 
 def home(request):
@@ -24,7 +28,13 @@ def check_leaks(request):
                     breach_date=breach['breach_date'],
                     description=breach['description']
                 )
-            return JsonResponse({'breaches': breaches})
+            # Send notifications
+            notification_message = f"New data breach detected for email: {email}"
+            notify_user(email, notification_message)
+            # Generate recommendations and help
+            checklist = generate_checklist(email)
+            security_advice = get_security_advice()
+            return JsonResponse({'breaches': breaches, 'checklist': checklist, 'security_advice': security_advice})
         else:
             return JsonResponse({'message': 'No breaches found'}, status=200)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -37,15 +47,19 @@ def export_report(request):
 
         breaches = Breach.objects.filter(service_name__icontains=email)
         if breaches.exists():
-            report_content = ""
-            for breach in breaches:
-                report_content += f"Service: {breach.service_name}\n"
-                report_content += f"Breach Date: {breach.breach_date}\n"
-                report_content += f"Description: {breach.description}\n\n"
-
-            response = HttpResponse(report_content, content_type='text/plain')
-            response['Content-Disposition'] = f'attachment; filename="{email}_report.txt"'
-            return response
+            format = request.POST.get('format', 'pdf')
+            if format == 'pdf':
+                return generate_pdf_report(breaches)
+            elif format == 'html':
+                return generate_html_report(breaches)
+            else:
+                return JsonResponse({'error': 'Unsupported format'}, status=400)
         else:
             return JsonResponse({'message': 'No breaches found to export'}, status=200)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+def visualize_breaches(request):
+    if request.method == 'GET':
+        visualization = create_breach_visualization()
+        return render(request, 'leaksmap/visualization.html', {'visualization': visualization})
     return JsonResponse({'error': 'Invalid request method'}, status=405)

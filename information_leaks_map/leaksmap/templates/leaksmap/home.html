@@ -1,8 +1,48 @@
 {% extends "leaksmap/base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Начальная{% endblock %}
 
 {% block content %}
-    <h1>Welcome to Leak Map</h1>
-    <p>This is the home page of the Leak Map application. Use the navigation menu to check for data breaches or export reports.</p>
+    <h1>Добро пожаловать!</h1>
+    <p>Начальная страница</p>
+    <a href="{% url 'visualize_breaches' %}">Просмотреть визуализацию утечек</a>
+    <a href="{% url 'results' %}">Просмотреть результаты</a>
+    <a href="{% url 'register' %}">Зарегистрироваться</a>
+    <a href="{% url 'login' %}">Войти</a>
+    <a href="{% url 'profile' %}">Профиль</a>
+    <a href="{% url 'settings' %}">Настройки</a>
+    <a href="{% url 'feedback' %}">Оставить отзыв</a>
+    <a href="{% url 'view_feedback' %}">Просмотреть отзывы</a>
+    <a href="{% url 'notifications' %}">Уведомления</a>
+    <a href="{% url 'generate_report' %}">Сгенерировать отчет</a>
+    <a href="{% url 'analytics' %}">Аналитика</a>
+    <a href="{% url 'create_ticket' %}">Создать тикет поддержки</a>
+    <a href="{% url 'view_tickets' %}">Просмотреть тикеты</a>
+    <a href="{% url 'notifications' %}">Уведомления</a>
+    <a href="{% url 'feedback' %}">Оставить отзыв</a>
+    <a href="{% url 'view_feedback' %}">Просмотреть отзывы</a>
+    <a href="{% url 'generate_report' %}">Сгенерировать отчет</a>
+    <a href="{% url 'analytics' %}">Аналитика</a>
+    <a href="{% url 'create_ticket' %}">Создать тикет поддержки</a>
+    <a href="{% url 'view_tickets' %}">Просмотреть тикеты</a>
+
+    <h2>Проверка утечек</h2>
+    <form id="check-leaks-form" method="post">
+        {% csrf_token %}
+        <label for="email">Введите ваш email:</label>
+        <input type="email" id="email" name="email" required>
+        <button type="submit">Проверить утечки</button>
+    </form>
+
+    <h2>Экспорт отчета</h2>
+    <form id="export-report-form" method="post">
+        {% csrf_token %}
+        <label for="export-email">Введите ваш email:</label>
+        <input type="email" id="export-email" name="email" required>
+        <select name="format">
+            <option value="pdf">PDF</option>
+            <option value="html">HTML</option>
+        </select>
+        <button type="submit">Экспортировать отчет</button>
+    </form>
 {% endblock %}

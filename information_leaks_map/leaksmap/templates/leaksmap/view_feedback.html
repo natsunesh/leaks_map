@@ -1,0 +1,12 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}View Feedback{% endblock %}
+
+{% block content %}
+    <h1>View Feedback</h1>
+    <ul>
+        {% for feedback in feedbacks %}
+        <li>{{ feedback.user.username }}: {{ feedback.content }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
