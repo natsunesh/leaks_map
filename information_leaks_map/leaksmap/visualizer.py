@@ -62,6 +62,6 @@ def create_breach_visualization():
     return p
 
 # Add the visualization to the current document
-visualization = create_breach_visualization()
-if visualization:
-    curdoc().add_root(column(visualization))
+# visualization = create_breach_visualization()
+# if visualization:
+#     curdoc().add_root(column(visualization))
