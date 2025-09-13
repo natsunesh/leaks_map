@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from .models import AnalyticsData
+
+from information_leaks_map.leaksmap.models import AnalyticsData
 
 @login_required
 def analytics(request):
