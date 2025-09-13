@@ -1,7 +1,15 @@
+"""
+Models for the LeaksMap application.
+This module contains all the database models used by the application.
+"""
+
 from django.db import models
 from django.contrib.auth.models import User
 
 class Breach(models.Model):
+    """
+    Model representing a data breach.
+    """
     service_name = models.CharField(max_length=255)
     breach_date = models.DateField()
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -18,44 +26,48 @@ class Breach(models.Model):
             models.Index(fields=['service_name']),
         ]
 
-class AnalyticsData(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    data = models.JSONField()
+class Feedback(models.Model):
+    """
+    Model representing user feedback.
+    """
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"AnalyticsData for {self.user.username} - {self.created_at}"
+        return f"Feedback from {self.user.username if self.user else 'Anonymous'} - {self.created_at}"
 
-class Notification(models.Model):
+class Report(models.Model):
+    """
+    Model representing a generated report.
+    """
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    email = models.EmailField()
+    generated_at = models.DateTimeField(auto_now_add=True)
+    content = models.JSONField(default=dict)
+
+    def __str__(self):
+        return f"Report for {self.email} - {self.generated_at}"
+
+class SupportTicket(models.Model):
+    """
+    Model representing a support ticket.
+    """
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('closed', 'Closed'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    message = models.TextField()
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     created_at = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Notification for {self.user.username} - {self.created_at}"
+        return f"Ticket: {self.title} - {self.get_status_display()}"
 
-class Recommendation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    recommendation_text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Recommendation for {self.user.username} - {self.created_at}"
-
-class UserSettings(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    notification_enabled = models.BooleanField(default=True)
-    dark_mode = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"Settings for {self.user.username}"
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    email = models.EmailField(blank=True)
-
-    def __str__(self):
-        return f"Profile of {self.user.username}"
+    def get_status_display(self):
+        return dict(self.STATUS_CHOICES).get(self.status, 'Unknown')

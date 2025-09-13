@@ -15,9 +15,13 @@
 
         <h1>Карта информационных утечек</h1>
 
-        <ul>
-            <li><a href="{% url 'check_leaks' %}">проверить утечку</a></li>
-            <li><a href="{% url 'export_report' %}">Export Report</a></li>
+    <ul>
+            <li><a href="{% url 'home' %}">Главная</a></li>
+            <li><a href="{% url 'feedback' %}">Оставить отзыв</a></li>
+            <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
+            <li><a href="{% url 'generate_report' %}">Сгенерировать отчет</a></li>
+            <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
+            <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
         </ul>
     </header>
     <main>

@@ -1,44 +1,111 @@
 {% extends "leaksmap/base.html" %}
 
-{% block title %}Начальная{% endblock %}
+{% block title %}Главная{% endblock %}
 
 {% block content %}
-    <h1>Добро пожаловать!</h1>
-    <p>Начальная страница</p>
-    <p>Используйте следующие функции для работы с приложением:</p>
-    <ul>
-        <li><a href="{% url 'visualize_breaches' %}">Просмотреть визуализацию утечек</a></li>
-        <li><a href="{% url 'results' %}">Просмотреть результаты</a></li>
-        <li><a href="{% url 'register' %}">Зарегистрироваться</a></li>
-        <li><a href="{% url 'login' %}">Войти</a></li>
-        <li><a href="{% url 'profile' %}">Профиль</a></li>
-        <li><a href="{% url 'settings' %}">Настройки</a></li>
-        <li><a href="{% url 'feedback' %}">Оставить отзыв</a></li>
-        <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
-        <li><a href="{% url 'notifications' %}">Уведомления</a></li>
-        <li><a href="{% url 'generate_report' %}">Сгенерировать отчет</a></li>
-        <li><a href="{% url 'analytics' %}">Аналитика</a></li>
-        <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
-        <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
-    </ul>
+    <div class="container mt-5">
+        <div class="jumbotron text-center">
+            <h1 class="display-4">Добро пожаловать в Карту информационных утечек!</h1>
+            <p class="lead">Ваш надежный помощник в мониторинге и защите от утечек данных</p>
+            <hr class="my-4">
+            <p>Используйте наше приложение для проверки утечек, генерации отчетов и получения поддержки.</p>
+        </div>
 
-    <h2>Проверка утечек</h2>
-    <form id="check-leaks-form" method="post">
-        {% csrf_token %}
-        <label for="email">Введите ваш email:</label>
-        <input type="email" id="email" name="email" required>
-        <button type="submit">Проверить утечки</button>
-    </form>
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="card-title">Основные функции</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <a href="{% url 'feedback' %}" class="text-decoration-none">Оставить отзыв</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{% url 'view_feedback' %}" class="text-decoration-none">Просмотреть отзывы</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{% url 'generate_report' %}" class="text-decoration-none">Сгенерировать отчет</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{% url 'create_ticket' %}" class="text-decoration-none">Создать тикет поддержки</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{% url 'view_tickets' %}" class="text-decoration-none">Просмотреть тикеты</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
-    <h2>Экспорт отчета</h2>
-    <form id="export-report-form" method="post">
-        {% csrf_token %}
-        <label for="export-email">Введите ваш email:</label>
-        <input type="email" id="export-email" name="email" required>
-        <select name="format">
-            <option value="pdf">PDF</option>
-            <option value="html">HTML</option>
-        </select>
-        <button type="submit">Экспортировать отчет</button>
-    </form>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h2 class="card-title">Проверка утечек</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="check-leaks-form" method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Введите ваш email:</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="invalid-feedback">
+                                    Пожалуйста, введите корректный email.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Проверить утечки</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h2 class="card-title">Экспорт отчета</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="export-report-form" method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="export-email" class="form-label">Введите ваш email:</label>
+                                <input type="email" class="form-control" id="export-email" name="email" required>
+                                <div class="invalid-feedback">
+                                    Пожалуйста, введите корректный email.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="format" class="form-label">Формат отчета:</label>
+                                <select class="form-select" id="format" name="format" required>
+                                    <option value="pdf">PDF</option>
+                                    <option value="html">HTML</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Экспортировать отчет</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bootstrap form validation
+        (function () {
+            'use strict'
+
+            var forms = document.querySelectorAll('.needs-validation')
+
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
 {% endblock %}

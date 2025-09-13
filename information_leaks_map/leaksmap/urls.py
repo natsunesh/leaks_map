@@ -1,36 +1,11 @@
 from django.urls import path
-from . import views, ui, auth, profile, settings, feedback, notifications_manager, reports, analytics, support
+from . import views, feedback, reports, support
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('check_leaks/', views.check_leaks, name='check_leaks'),
-    path('export_report/', views.export_report, name='export_report'),
-    path('visualize_breaches/', views.visualize_breaches, name='visualize_breaches'),
-    path('results/', ui.display_results, name='results'),
-    path('register/', auth.register, name='register'),
-    path('login/', auth.login_user, name='login'),
-    path('logout/', auth.logout_user, name='logout'),
-    path('profile/', profile.profile, name='profile'),
-    path('settings/', settings.settings, name='settings'),
     path('feedback/', feedback.submit_feedback, name='feedback'),
     path('view_feedback/', feedback.view_feedback, name='view_feedback'),
-    path('notifications/', notifications_manager.notifications, name='notifications'),
     path('generate_report/', reports.generate_report, name='generate_report'),
-    path('view_report/<int:report_id>/', reports.view_report, name='view_report'),
-    path('analytics/', analytics.analytics, name='analytics'),
     path('create_ticket/', support.create_ticket, name='create_ticket'),
     path('view_tickets/', support.view_tickets, name='view_tickets'),
-    path('notifications/', notifications_manager.notifications, name='notifications'),
-    path('feedback/', feedback.submit_feedback, name='feedback'),
-    path('view_feedback/', feedback.view_feedback, name='view_feedback'),
-    path('generate_report/', reports.generate_report, name='generate_report'),
-    path('view_report/<int:report_id>/', reports.view_report, name='view_report'),
-    path('analytics/', analytics.analytics, name='analytics'),
-    path('create_ticket/', support.create_ticket, name='create_ticket'),
-    path('view_tickets/', support.view_tickets, name='view_tickets'),
-    path('notifications/', notifications_manager.notifications, name='notifications'),
-    path('feedback/', feedback.submit_feedback, name='feedback'),
-    path('view_feedback/', feedback.view_feedback, name='view_feedback'),
-    path('generate_report/', reports.generate_report, name='generate_report'),
-    path('view_report/<int:report_id>/', reports.view_report, name='view_report'),
 ]
