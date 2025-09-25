@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breach Report</title>
+    <link rel="stylesheet" href="{% load static %}{% static 'CSS/main.css' %}">
+</head>
+<body>
+    <h1>Breach Report</h1>
+    <div id="report-container">
+        <h2>Breaches Found</h2>
+        <ul>
+            {% for breach in breaches %}
+                <li>
+                    <strong>{{ breach.service_name }}</strong> - {{ breach.breach_date }}
+                    <p>{{ breach.description }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+</body>
+</html>

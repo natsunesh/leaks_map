@@ -46,11 +46,11 @@ class LeakCheckTests(TestCase):
         # Add assertions to check if the notification was sent
 
     def test_generate_checklist(self):
-        checklist = generate_checklist(self.email)
+        checklist = generate_checklist([self.breach_data])
         self.assertIsInstance(checklist, list)
 
     def test_get_security_advice(self):
-        advice = get_security_advice()
+        advice = get_security_advice([self.breach])
         self.assertIsInstance(advice, str)
 
     def test_generate_pdf_report(self):

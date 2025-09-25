@@ -12,9 +12,18 @@ def generate_pdf_report(breaches):
 
     y = 1000
     for breach in breaches:
-        p.drawString(100, y, f"Service: {breach.service_name}")
-        p.drawString(100, y - 20, f"Date: {breach.breach_date}")
-        p.drawString(100, y - 40, f"Description: {breach.description}")
+        if hasattr(breach, 'service_name'):
+            service_name = breach.service_name
+            breach_date = breach.breach_date
+            description = breach.description
+        else:
+            service_name = breach['service_name']
+            breach_date = breach['breach_date']
+            description = breach['description']
+
+        p.drawString(100, y, f"Service: {service_name}")
+        p.drawString(100, y - 20, f"Date: {breach_date}")
+        p.drawString(100, y - 40, f"Description: {description}")
         y -= 60
 
     p.showPage()

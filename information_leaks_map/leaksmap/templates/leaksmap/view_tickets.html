@@ -1,0 +1,18 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Просмотреть тикеты{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Просмотреть тикеты</h1>
+        <ul class="list-group">
+            {% for ticket in tickets %}
+                <li class="list-group-item">
+                    <h5>{{ ticket.title }}</h5>
+                    <p>{{ ticket.description }}</p>
+                    <small class="text-muted">Статус: {{ ticket.get_status_display }} - Создан: {{ ticket.created_at }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

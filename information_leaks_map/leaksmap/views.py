@@ -9,6 +9,7 @@ from .utils import validate_email
 from .api_client import LeakCheckAPIClient
 from .models import Breach
 from .export import generate_pdf_report, generate_html_report
+from .visualizer import create_breach_visualization
 import os
 
 def home(request):
@@ -77,3 +78,13 @@ def export_report(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+def visualize_breaches(request):
+    """
+    Generate and display a visualization of breaches.
+    """
+    visualization = create_breach_visualization()
+    if visualization:
+        return render(request, 'leaksmap/visualization.html', {'visualization': visualization})
+    else:
+        return JsonResponse({'message': 'No breaches found to visualize'}, status=200)

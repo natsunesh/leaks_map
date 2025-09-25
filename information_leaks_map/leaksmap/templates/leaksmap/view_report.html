@@ -1,0 +1,23 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Просмотреть отчет{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Просмотреть отчет</h1>
+        <div class="card">
+            <div class="card-header">
+                <h5>Отчет для {{ report.email }}</h5>
+            </div>
+            <div class="card-body">
+                <p>Сгенерирован: {{ report.generated_at }}</p>
+                <h6>Утечки:</h6>
+                <ul>
+                    {% for breach in report.breach_set.all %}
+                        <li>{{ breach.service_name }} - {{ breach.breach_date }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}

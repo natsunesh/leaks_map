@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breach Visualization</title>
+    <link rel="stylesheet" href="{% load static %}{% static 'CSS/main.css' %}">
+</head>
+<body>
+    <h1>Breach Visualization</h1>
+    <div id="visualization-container">
+        {{ visualization|safe }}
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Просмотреть отзывы{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Просмотреть отзывы</h1>
+        <ul class="list-group">
+            {% for feedback in feedbacks %}
+                <li class="list-group-item">
+                    <p>{{ feedback.content }}</p>
+                    <small class="text-muted">От: {{ feedback.user.username if feedback.user else 'Аноним' }} - {{ feedback.created_at }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
