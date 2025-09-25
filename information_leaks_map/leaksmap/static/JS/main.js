@@ -22,6 +22,22 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Additional utility functions
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `alert alert-${type} alert-dismissible fade show`;
@@ -49,6 +65,31 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             // Add AJAX submission logic here
             showNotification('Checking for leaks...', 'info');
+
+            // Get the email from the form
+            const email = document.getElementById('email').value;
+
+            // Send AJAX request to the server
+            fetch('/check_leaks/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `email=${encodeURIComponent(email)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.breaches) {
+                    showNotification('Breaches found!', 'warning');
+                } else {
+                    showNotification('No breaches found.', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error checking for leaks.', 'danger');
+                console.error('Error:', error);
+            });
         });
     }
 
@@ -59,6 +100,32 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             // Add AJAX submission logic here
             showNotification('Exporting report...', 'info');
+
+            // Get the email and format from the form
+            const email = document.getElementById('export-email').value;
+            const format = document.getElementById('format').value;
+
+            // Send AJAX request to the server
+            fetch('/export_report/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `email=${encodeURIComponent(email)}&format=${encodeURIComponent(format)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Report exported successfully!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error exporting report.', 'danger');
+                console.error('Error:', error);
+            });
         });
     }
 });

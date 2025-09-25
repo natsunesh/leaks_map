@@ -2,12 +2,18 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+import tempfile
+import os
 
 def generate_pdf_report(breaches):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="report.pdf"'
 
-    p = canvas.Canvas(response, pagesize=letter)
+    # Создаем временный файл
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+        temp_filename = tmp.name
+
+    p = canvas.Canvas(temp_filename, pagesize=letter)
     p.setFont("Helvetica", 12)
 
     y = 1000
@@ -28,6 +34,14 @@ def generate_pdf_report(breaches):
 
     p.showPage()
     p.save()
+
+    # Читаем содержимое временного файла и записываем в HttpResponse
+    with open(temp_filename, 'rb') as f:
+        response.write(f.read())
+
+    # Удаляем временный файл
+    os.remove(temp_filename)
+
     return response
 
 def generate_html_report(breaches):

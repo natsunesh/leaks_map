@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .utils import validate_email
 from .api_client import LeakCheckAPIClient
-from .models import Breach
+from .models import Breach, Report
 from .export import generate_pdf_report, generate_html_report
 from .visualizer import create_breach_visualization
 import os
@@ -164,3 +164,17 @@ def edit_profile(request):
         return redirect('view_profile')
 
     return render(request, 'leaksmap/edit_profile.html', {'profile': profile})
+
+def view_report(request):
+    """
+    Display the report for the user.
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    report = Report.objects.filter(user=request.user).first()
+    if not report:
+        messages.warning(request, 'No report found for this user.')
+        return redirect('home')
+
+    return render(request, 'leaksmap/view_report.html', {'report': report})

@@ -1,5 +1,6 @@
-from typing import List, Dict
+from typing import List, Dict, Union, Any
 import logging
+from .models import Breach
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def generate_checklist(breaches: List[Dict]) -> List[str]:
     logger.info("Generated security checklist")
     return checklist
 
-def get_security_advice(breaches: List[Dict]) -> str:
+def get_security_advice(breaches: List[Union[Dict, Breach]]) -> str:
     """
     Provide security advice based on the breaches found.
 
@@ -47,7 +48,7 @@ def get_security_advice(breaches: List[Dict]) -> str:
         for breach in breaches:
             if isinstance(breach, dict) and 'service_name' in breach:
                 advice += f"- {breach['service_name']}\n"
-            elif hasattr(breach, 'service_name'):
+            elif isinstance(breach, Breach):
                 advice += f"- {breach.service_name}\n"
     else:
         advice += "No breaches found. However, it's still important to maintain good security practices.\n"

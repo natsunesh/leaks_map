@@ -19,6 +19,7 @@
                 <li><a href="{% url 'home' %}">Главная</a></li>
                 <li><a href="{% url 'feedback' %}">Оставить отзыв</a></li>
                 <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
+                <li><a href="{% url 'view_report' %}">Просмотреть отчет</a></li>
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
                     <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
