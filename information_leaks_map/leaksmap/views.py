@@ -3,8 +3,12 @@ Views for the LeaksMap application.
 This module contains the view functions for handling web requests.
 """
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .utils import validate_email
 from .api_client import LeakCheckAPIClient
 from .models import Breach
@@ -88,3 +92,75 @@ def visualize_breaches(request):
         return render(request, 'leaksmap/visualization.html', {'visualization': visualization})
     else:
         return JsonResponse({'message': 'No breaches found to visualize'}, status=200)
+
+def register(request):
+    """
+    Handle user registration.
+    """
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            messages.success(request, 'Registration successful!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Error during registration')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+def user_login(request):
+    """
+    Handle user login.
+    """
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, 'Login successful!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid username or password')
+    return render(request, 'registration/login.html')
+
+def user_logout(request):
+    """
+    Handle user logout.
+    """
+    logout(request)
+    messages.success(request, 'Logout successful!')
+    return redirect('home')
+
+def view_profile(request):
+    """
+    Display the user's profile.
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    profile = request.user.userprofile
+    return render(request, 'leaksmap/profile.html', {'profile': profile})
+
+def edit_profile(request):
+    """
+    Edit the user's profile.
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    profile = request.user.userprofile
+    if request.method == 'POST':
+        profile.bio = request.POST.get('bio', '')
+        profile.location = request.POST.get('location', '')
+        profile.birth_date = request.POST.get('birth_date', '')
+        profile.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('view_profile')
+
+    return render(request, 'leaksmap/edit_profile.html', {'profile': profile})

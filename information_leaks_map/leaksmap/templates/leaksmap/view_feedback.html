@@ -9,7 +9,7 @@
             {% for feedback in feedbacks %}
                 <li class="list-group-item">
                     <p>{{ feedback.content }}</p>
-                    <small class="text-muted">От: {{ feedback.user.username if feedback.user else 'Аноним' }} - {{ feedback.created_at }}</small>
+                    <small class="text-muted">От: {{ feedback.user.username|default:'Аноним' }} - {{ feedback.created_at }}</small>
                 </li>
             {% endfor %}
         </ul>

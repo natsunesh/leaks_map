@@ -19,9 +19,15 @@
                 <li><a href="{% url 'home' %}">Главная</a></li>
                 <li><a href="{% url 'feedback' %}">Оставить отзыв</a></li>
                 <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
-                <li><a href="{% url 'generate_report' %}">Сгенерировать отчет</a></li>
-                <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
-                <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
+                    <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
+                    <li><a href="{% url 'logout' %}">Выйти</a></li>
+                    <li>Добро пожаловать, {{ user.username }}!</li>
+                {% else %}
+                    <li><a href="{% url 'login' %}">Войти</a></li>
+                    <li><a href="{% url 'register' %}">Зарегистрироваться</a></li>
+                {% endif %}
             </ul>
         </nav>
     </header>
