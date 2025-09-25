@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'use strict';
 
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    var forms = document.querySelectorAll('.needs-validation');
+    const forms = document.querySelectorAll('.needs-validation');
 
     // Loop over them and prevent submission
     Array.prototype.slice.call(forms)
@@ -39,6 +39,7 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+// Form submission handlers
 // Form submission handlers
 document.addEventListener('DOMContentLoaded', function() {
     // Check leaks form
