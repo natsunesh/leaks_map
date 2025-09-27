@@ -59,6 +59,7 @@ class LeakCheckAPIClient:
         if cached_data:
             return cached_data
 
+        response = None
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=timeout)
             response.raise_for_status()
@@ -70,18 +71,18 @@ class LeakCheckAPIClient:
             logger.error(f"Connection error for email {email} when accessing LeakCheck API")
             raise ConnectionError(f"Connection error for email {email} when accessing LeakCheck API")
         except requests.exceptions.HTTPError as err:
-            if response.status_code == 404:
+            if response and response.status_code == 404:
                 logger.error(f"Resource not found for email {email}")
                 raise ValueError(f"Resource not found for email {email}")
-            elif response.status_code == 429:
+            elif response and response.status_code == 429:
                 logger.error(f"Rate limit exceeded for email {email}")
                 raise ValueError(f"Rate limit exceeded for email {email}")
-            elif response.status_code == 500:
+            elif response and response.status_code == 500:
                 logger.error(f"Internal server error for email {email}")
                 raise ValueError(f"Internal server error for email {email}")
             else:
-                logger.error(f"HTTP error {response.status_code} for email {email}: {err}")
-                raise ValueError(f"HTTP error {response.status_code} for email {email}: {err}")
+                logger.error(f"HTTP error for email {email}: {err}")
+                raise ValueError(f"HTTP error for email {email}: {err}")
         except requests.exceptions.RequestException as err:
             logger.error(f"Unexpected error for email {email}: {err}", exc_info=True)
             raise ValueError(f"Unexpected error for email {email}: {err}")
@@ -106,10 +107,15 @@ class LeakCheckAPIClient:
             for source in results:
                 name = source.get("name")
                 date = source.get("date")
+                location = source.get("location", "Unknown")
+                data_type = source.get("data_type", "Unknown")
                 standardized_results.append({
                     "service_name": name or "Unknown",
                     "breach_date": date or "Unknown",
-                    "description": f"Data breach detected at {name}" if name else "Data breach detected"
+                    "location": location,
+                    "data_type": data_type,
+                    "description": f"Data breach detected at {name}" if name else "Data breach detected",
+                    "source": "LeakCheck"
                 })
             results = standardized_results
 
@@ -134,6 +140,7 @@ class LeakCheckAPIClient:
             "check": username,
         }
 
+        response = None
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=timeout)
             response.raise_for_status()
@@ -144,18 +151,18 @@ class LeakCheckAPIClient:
             logger.error(f"Connection error for username {username} when accessing LeakCheck API")
             raise ConnectionError(f"Connection error for username {username} when accessing LeakCheck API")
         except requests.exceptions.HTTPError as err:
-            if response.status_code == 404:
+            if response and response.status_code == 404:
                 logger.error(f"Resource not found for username {username}")
                 raise ValueError(f"Resource not found for username {username}")
-            elif response.status_code == 429:
+            elif response and response.status_code == 429:
                 logger.error(f"Rate limit exceeded for username {username}")
                 raise ValueError(f"Rate limit exceeded for username {username}")
-            elif response.status_code == 500:
+            elif response and response.status_code == 500:
                 logger.error(f"Internal server error for username {username}")
                 raise ValueError(f"Internal server error for username {username}")
             else:
-                logger.error(f"HTTP error {response.status_code} for username {username}: {err}")
-                raise ValueError(f"HTTP error {response.status_code} for username {username}: {err}")
+                logger.error(f"HTTP error for username {username}: {err}")
+                raise ValueError(f"HTTP error for username {username}: {err}")
         except requests.exceptions.RequestException as err:
             logger.error(f"Unexpected error for username {username}: {err}", exc_info=True)
             raise ValueError(f"Unexpected error for username {username}: {err}")

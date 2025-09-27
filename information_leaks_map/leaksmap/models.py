@@ -12,19 +12,27 @@ class Breach(models.Model):
     """
     Model representing a data breach.
     """
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('processed', 'Processed'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='breaches')
     service_name = models.CharField(max_length=255)
     breach_date = models.DateField()
     location = models.CharField(max_length=255, blank=True, null=True)
     data_type = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
-    email = models.EmailField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    source = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.service_name} - {self.breach_date} - {self.email}"
+        user_email = self.user.email if self.user else "Unknown User"
+        return f"{self.service_name} - {self.breach_date} - {user_email}"
 
     class Meta:
         indexes = [
-            models.Index(fields=['email']),
+            models.Index(fields=['user']),
             models.Index(fields=['service_name']),
         ]
 
@@ -43,13 +51,14 @@ class Report(models.Model):
     """
     Model representing a generated report.
     """
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    email = models.EmailField()
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reports')
     generated_at = models.DateTimeField(auto_now_add=True)
     content = models.JSONField(default=dict)
+    report_type = models.CharField(max_length=10, choices=[('pdf', 'PDF'), ('html', 'HTML')], default='pdf')
 
     def __str__(self):
-        return f"Report for {self.email} - {self.generated_at}"
+        user_email = self.user.email if self.user else "Unknown User"
+        return f"Report for {user_email} - {self.generated_at}"
 
 class SupportTicket(models.Model):
     """
@@ -82,6 +91,8 @@ class UserProfile(models.Model):
     bio = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
+    telegram_id = models.CharField(max_length=255, blank=True, null=True)
+    notification_preferences = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return f"Profile of {self.user.username}"
@@ -93,4 +104,5 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.userprofile.save()
+    if hasattr(instance, 'userprofile'):
+        instance.userprofile.save()

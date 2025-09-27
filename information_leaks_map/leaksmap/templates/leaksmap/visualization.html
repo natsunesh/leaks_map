@@ -1,16 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Breach Visualization</title>
-    <link rel="stylesheet" href="{% load static %}{% static 'CSS/main.css' %}">
-</head>
-<body>
-    <h1>Breach Visualization</h1>
-    <div id="visualization-container">
-        {{ visualization|safe }}
+{% extends "leaksmap/base.html" %}
+
+{% block title %}Визуализация утечек{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Визуализация утечек данных</h1>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Фильтры</h5>
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="data_type" class="form-label">Тип данных</label>
+                        <select class="form-select" id="data_type" name="data_type">
+                            <option value="">Все типы</option>
+                            {% for data_type in data_types %}
+                                <option value="{{ data_type }}" {% if current_filters.data_type == data_type %}selected{% endif %}>
+                                    {{ data_type }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Дата с</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date"
+                               value="{{ current_filters.start_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">Дата по</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date"
+                               value="{{ current_filters.end_date }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Применить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Визуализация</h5>
+                <div id="visualization-container" class="p-3">
+                    {% if visualization %}
+                        {{ visualization|safe }}
+                    {% else %}
+                        <div class="alert alert-info">
+                            Нет данных для визуализации. Проверьте фильтры или добавьте данные об утечках.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="{% url 'home' %}" class="btn btn-secondary">На главную</a>
+        </div>
     </div>
-    <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
-</body>
-</html>
+{% endblock %}

@@ -55,7 +55,26 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
-// Form submission handlers
+// Function to display breaches
+function displayBreaches(breaches) {
+    const resultsContainer = document.getElementById('leaks-results');
+    if (!resultsContainer) return;
+
+    if (!Array.isArray(breaches) || breaches.length === 0) {
+        resultsContainer.innerHTML = '<div class="alert alert-info">Утечек не найдено.</div>';
+        return;
+    }
+
+    let html = '<div class="alert alert-info"><h4>Найденные утечки:</h4><ul>';
+    breaches.forEach(breach => {
+        if (breach && breach.service_name && breach.description && breach.breach_date) {
+            html += `<li><strong>${breach.service_name}</strong>: ${breach.description} (${breach.breach_date})</li>`;
+        }
+    });
+    html += '</ul></div>';
+    resultsContainer.innerHTML = html;
+}
+
 // Form submission handlers
 document.addEventListener('DOMContentLoaded', function() {
     // Check leaks form
@@ -64,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkLeaksForm.addEventListener('submit', function(e) {
             e.preventDefault();
             // Add AJAX submission logic here
-            showNotification('Checking for leaks...', 'info');
+            showNotification('Проверка утечек...', 'info');
 
             // Get the email from the form
             const email = document.getElementById('email').value;
@@ -78,16 +97,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: `email=${encodeURIComponent(email)}`
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.breaches) {
-                    showNotification('Breaches found!', 'warning');
+                if (data.breaches && data.breaches.length > 0) {
+                    showNotification('Утечки найдены!', 'warning');
+                    displayBreaches(data.breaches);
                 } else {
-                    showNotification('No breaches found.', 'success');
+                    showNotification('Утечек не найдено.', 'success');
                 }
             })
             .catch(error => {
-                showNotification('Error checking for leaks.', 'danger');
+                showNotification('Ошибка при проверке утечек.', 'danger');
                 console.error('Error:', error);
             });
         });
@@ -99,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
         exportReportForm.addEventListener('submit', function(e) {
             e.preventDefault();
             // Add AJAX submission logic here
-            showNotification('Exporting report...', 'info');
+            showNotification('Экспорт отчета...', 'info');
 
             // Get the email and format from the form
             const email = document.getElementById('export-email').value;
@@ -119,11 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.message) {
                     showNotification(data.message, 'success');
                 } else {
-                    showNotification('Report exported successfully!', 'success');
+                    showNotification('Отчет успешно экспортирован!', 'success');
                 }
             })
             .catch(error => {
-                showNotification('Error exporting report.', 'danger');
+                showNotification('Ошибка при экспорте отчета.', 'danger');
                 console.error('Error:', error);
             });
         });

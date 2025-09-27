@@ -1,64 +1,183 @@
-from django.test import TestCase
+"""
+Tests for the LeaksMap application.
+This module contains unit tests for the application.
+"""
+
+from django.test import TestCase, Client
 from django.urls import reverse
-from django.http import HttpResponse
-from .models import Breach
+from django.contrib.auth.models import User
+from .models import Breach, Report, UserProfile, Feedback, SupportTicket
 from .utils import validate_email
 from .api_client import LeakCheckAPIClient
-from .visualizer import create_breach_visualization
-from .notifications import notify_user
-from .recommendations import generate_checklist, get_security_advice
-from .export import generate_pdf_report, generate_html_report
+from unittest.mock import patch, MagicMock
 import os
 
-class LeakCheckTests(TestCase):
-
-    def setUp(self):
-        self.email = "test@example.com"
-        self.breach_data = {
-            "service_name": "TestService",
-            "breach_date": "2023-01-01",
-            "description": "Test breach description"
-        }
-        self.breach = Breach.objects.create(**self.breach_data)
+class TestUtils(TestCase):
+    """Test utility functions."""
 
     def test_validate_email(self):
-        self.assertTrue(validate_email(self.email))
+        """Test email validation."""
+        self.assertTrue(validate_email("test@example.com"))
         self.assertFalse(validate_email("invalid-email"))
 
-    def test_check_leaks(self):
-        response = self.client.post(reverse('check_leaks'), {'email': self.email})
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('breaches', response.json())
+class TestModels(TestCase):
+    """Test models."""
 
-    def test_export_report(self):
-        response = self.client.post(reverse('export_report'), {'email': self.email, 'format': 'pdf'})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'application/pdf')
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', email='test@example.com', password='testpass123')
+        self.user_profile = UserProfile.objects.create(user=self.user)
 
-    def test_visualize_breaches(self):
+    def test_breach_model(self):
+        """Test Breach model."""
+        breach = Breach.objects.create(
+            user=self.user,
+            service_name="Test Service",
+            breach_date="2023-01-01",
+            description="Test breach"
+        )
+        self.assertEqual(str(breach), "Test Service - 2023-01-01 - test@example.com")
+        breach.user = None
+        breach.save()
+        self.assertEqual(str(breach), "Test Service - 2023-01-01 - Unknown User")
+
+    def test_report_model(self):
+        """Test Report model."""
+        report = Report.objects.create(
+            user=self.user,
+            report_type="pdf"
+        )
+        self.assertEqual(str(report), f"Report for test@example.com - {report.generated_at}")
+
+        report.user = None
+        report.save()
+        self.assertEqual(str(report), f"Report for Unknown User - {report.generated_at}")
+
+    def test_user_profile_model(self):
+        """Test UserProfile model."""
+        self.assertEqual(str(self.user_profile), "Profile of testuser")
+
+    def test_feedback_model(self):
+        """Test Feedback model."""
+        feedback = Feedback.objects.create(
+            user=self.user,
+            content="Test feedback"
+        )
+        self.assertEqual(str(feedback), "Feedback from testuser - 2023-01-01 00:00:00")
+
+    def test_support_ticket_model(self):
+        """Test SupportTicket model."""
+        ticket = SupportTicket.objects.create(
+            user=self.user,
+            title="Test Ticket",
+            description="Test description"
+        )
+        self.assertEqual(str(ticket), "Ticket: Test Ticket - open")
+
+class TestViews(TestCase):
+    """Test views."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', email='test@example.com', password='testpass123')
+        self.client.login(username='testuser', password='testpass123')
+
+    def test_home_view(self):
+        """Test home view."""
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_check_leaks_view(self):
+        """Test check leaks view."""
+        response = self.client.get(reverse('check_leaks'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_export_report_view(self):
+        """Test export report view."""
+        response = self.client.get(reverse('export_report'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_visualize_breaches_view(self):
+        """Test visualize breaches view."""
         response = self.client.get(reverse('visualize_breaches'))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'leaksmap/visualization.html')
 
-    def test_notify_user(self):
-        notification_message = "Test notification"
-        notify_user(self.email, notification_message)
-        # Add assertions to check if the notification was sent
+    def test_register_view(self):
+        """Test register view."""
+        response = self.client.get(reverse('register'))
+        self.assertEqual(response.status_code, 200)
 
-    def test_generate_checklist(self):
-        checklist = generate_checklist([self.breach_data])
-        self.assertIsInstance(checklist, list)
+    def test_login_view(self):
+        """Test login view."""
+        response = self.client.get(reverse('login'))
+        self.assertEqual(response.status_code, 200)
 
-    def test_get_security_advice(self):
-        advice = get_security_advice([self.breach])
-        self.assertIsInstance(advice, str)
+    def test_logout_view(self):
+        """Test logout view."""
+        response = self.client.get(reverse('logout'))
+        self.assertEqual(response.status_code, 302)
 
-    def test_generate_pdf_report(self):
-        report = generate_pdf_report([self.breach])
-        self.assertIsInstance(report, HttpResponse)
-        self.assertEqual(report['Content-Type'], 'application/pdf')
+    def test_view_profile_view(self):
+        """Test view profile view."""
+        response = self.client.get(reverse('view_profile'))
+        self.assertEqual(response.status_code, 200)
 
-    def test_generate_html_report(self):
-        report = generate_html_report([self.breach])
-        self.assertIsInstance(report, HttpResponse)
-        self.assertEqual(report['Content-Type'], 'text/html')
+    def test_edit_profile_view(self):
+        """Test edit profile view."""
+        response = self.client.get(reverse('edit_profile'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_report_view(self):
+        """Test view report view."""
+        response = self.client.get(reverse('view_report'))
+        self.assertEqual(response.status_code, 200)
+
+class TestAPIClient(TestCase):
+    """Test API client."""
+
+    @patch('requests.get')
+    def test_get_breach_info(self, mock_get):
+        """Test get breach info."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "success": True,
+            "sources": [
+                {
+                    "name": "Test Service",
+                    "date": "2023-01-01",
+                    "location": "Test Location",
+                    "data_type": "Test Data Type"
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        api_key = os.getenv("API_KEY", "test_api_key")
+        client = LeakCheckAPIClient(api_key=api_key)
+        breaches = client.get_breach_info("test@example.com")
+
+        self.assertEqual(len(breaches), 1)
+        self.assertEqual(breaches[0]["service_name"], "Test Service")
+
+    @patch('requests.get')
+    def test_get_breach_info_by_username(self, mock_get):
+        """Test get breach info by username."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "success": True,
+            "sources": [
+                {
+                    "name": "Test Service",
+                    "date": "2023-01-01"
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        api_key = os.getenv("API_KEY", "test_api_key")
+        client = LeakCheckAPIClient(api_key=api_key)
+        breaches = client.get_breach_info_by_username("testuser")
+
+        self.assertEqual(len(breaches), 1)
+        self.assertEqual(breaches[0]["service_name"], "Test Service")

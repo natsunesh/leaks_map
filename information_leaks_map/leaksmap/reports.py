@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.http import FileResponse
 from django.contrib import messages
 from .models import Report, Breach
-from .utils import generate_pdf_report, generate_html_report
+from .export import generate_pdf_report, generate_html_report
 
 def generate_report(request):
     """
