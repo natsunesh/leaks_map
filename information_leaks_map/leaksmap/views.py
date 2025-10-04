@@ -12,10 +12,10 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from typing import Optional, Dict, Any, List, Union
 from .utils import validate_email, sanitize_input, log_security_event
-from .api_client import LeakCheckAPIClient
+from .api_client import LeakCheckAPIClient, HaveIBeenPwnedAPIClient
 from .models import Breach, Report, UserProfile
 from .export import generate_pdf_report, generate_html_report
-from .visualizer import create_breach_visualization
+from .visualizer import create_breach_visualization, create_breach_visualization_from_api, create_breach_map
 import os
 import logging
 
@@ -45,41 +45,65 @@ def check_leaks(request) -> JsonResponse:
     if not validate_email(email):
         return JsonResponse({'error': 'Invalid email address'}, status=400)
 
-    api_key = os.getenv("API_KEY")
-    if not api_key:
-        logger.error("API key not configured")
-        return JsonResponse({'error': 'API key not configured'}, status=500)
+    all_breaches = []
 
-    try:
-        api_client = LeakCheckAPIClient(api_key=api_key)
-    except Exception as e:
-        logger.error(f"Error initializing API client: {str(e)}")
-        return JsonResponse({'error': f"Error initializing API client: {str(e)}"}, status=500)
-    try:
-        breaches = api_client.get_breach_info(email)
-    except Exception as e:
-        logger.error(f"API error: {str(e)}")
-        return JsonResponse({'error': f"API error: {str(e)}"}, status=500)
+    # LeakCheck API
+    leakcheck_api_key = os.getenv("API_KEY")
+    if leakcheck_api_key:
+        try:
+            leakcheck_client = LeakCheckAPIClient(api_key=leakcheck_api_key)
+            leakcheck_breaches = leakcheck_client.get_breach_info(email)
+            all_breaches.extend(leakcheck_breaches)
+        except Exception as e:
+            logger.error(f"LeakCheck API error: {str(e)}")
+            return JsonResponse({'error': f"LeakCheck API error: {str(e)}"}, status=500)
 
-    if breaches:
+    # Have I Been Pwned API
+    hibp_api_key = os.getenv("HIBP_API_KEY")
+    if hibp_api_key:
+        try:
+            hibp_client = HaveIBeenPwnedAPIClient(api_key=hibp_api_key)
+            hibp_breaches = hibp_client.get_breach_info(email)
+            all_breaches.extend(hibp_breaches)
+        except Exception as e:
+            logger.error(f"Have I Been Pwned API error: {str(e)}")
+            return JsonResponse({'error': f"Have I Been Pwned API error: {str(e)}"}, status=500)
+
+    if all_breaches:
         # Save breaches to database
-        for breach in breaches:
+        for breach in all_breaches:
             try:
+                # Handle date format from API (YYYY-MM)
+                breach_date = breach.get('breach_date', '2000-01-01')
+                if breach_date and len(breach_date) == 7:  # Format: YYYY-MM
+                    breach_date = breach_date + '-01'  # Append day to make it YYYY-MM-DD
+
+                # Ensure all required fields are present
+                service_name = breach.get('service_name', 'Unknown')
+                description = breach.get('description', 'No description')
+                source = breach.get('source', 'Unknown')
+                data_type = breach.get('data_type', 'Unknown')
+                location = breach.get('location', 'Unknown')
+
+                # Create or update breach record
                 Breach.objects.create(
                     user=request.user,
-                    service_name=breach.get('service_name', 'Unknown'),
-                    breach_date=breach.get('breach_date', '2000-01-01'),
-                    description=breach.get('description', 'No description'),
-                    source=breach.get('source', 'Unknown')
+                    service_name=service_name,
+                    breach_date=breach_date,
+                    description=description,
+                    source=source,
+                    data_type=data_type,
+                    location=location
                 )
             except ValidationError as e:
                 logger.error(f"Validation error: {str(e)}")
                 return JsonResponse({'error': str(e)}, status=400)
 
-        log_security_event('data_breach_found', request.user.id, f"Found {len(breaches)} breaches for {email}")
+        log_security_event('data_breach_found', request.user.id, f"Found {len(all_breaches)} breaches for {email}")
         return JsonResponse({
-            'breaches': breaches,
-            'message': 'Breaches found'
+            'breaches': all_breaches,
+            'message': 'Breaches found',
+            'redirect_url': f'/visualize_breaches/?email={email}'
         })
     else:
         log_security_event('no_breaches_found', request.user.id, f"No breaches found for {email}")
@@ -133,30 +157,37 @@ def visualize_breaches(request) -> HttpResponse:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     # Get filter parameters from request
+    email = request.GET.get('email')
     data_type = request.GET.get('data_type')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Create visualization with filters
+    # Use the user's email if none provided
+    if not email and request.user.is_authenticated:
+        email = request.user.email
+
+    # Create visualization using the function that supports filters
     try:
         visualization = create_breach_visualization(
-            request.user,
+            user=request.user,
             data_type_filter=data_type,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            email=email
         )
     except Exception as e:
         logger.error(f"Error creating visualization: {str(e)}")
         messages.error(request, f"Error creating visualization: {str(e)}")
         return redirect('home')
 
-    # Get unique data types for filter dropdown
-    try:
-        data_types = Breach.objects.filter(user=request.user).values_list('data_type', flat=True).distinct()
-    except Exception as e:
-        logger.error(f"Error fetching data types: {str(e)}")
-        messages.error(request, f"Error fetching data types: {str(e)}")
-        return redirect('home')
+    # Get unique data types for filter dropdown from database
+    breaches = Breach.objects.filter(user=request.user)
+    if email:
+        breaches = breaches.filter(user__email=email)
+    if data_type:
+        breaches = breaches.filter(data_type=data_type)
+
+    data_types = list(set(breach.data_type for breach in breaches if breach.data_type))
 
     context = {
         'visualization': visualization,
@@ -164,7 +195,8 @@ def visualize_breaches(request) -> HttpResponse:
         'current_filters': {
             'data_type': data_type,
             'start_date': start_date,
-            'end_date': end_date
+            'end_date': end_date,
+            'email': email
         }
     }
 

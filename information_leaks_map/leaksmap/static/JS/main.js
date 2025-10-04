@@ -88,6 +88,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get the email from the form
             const email = document.getElementById('email').value;
 
+            // Validate email before sending
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showNotification('Пожалуйста, введите корректный email.', 'danger');
+                return;
+            }
+
             // Send AJAX request to the server
             fetch('/check_leaks/', {
                 method: 'POST',
@@ -105,8 +111,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data.breaches && data.breaches.length > 0) {
-                    showNotification('Утечки найдены!', 'warning');
+                    showNotification('Утечки найдены! Перенаправление на страницу визуализации...', 'warning');
                     displayBreaches(data.breaches);
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    }
                 } else {
                     showNotification('Утечек не найдено.', 'success');
                 }

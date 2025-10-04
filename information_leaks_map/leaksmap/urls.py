@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views, feedback, reports, support
+from .views import export_report, visualize_breaches
 
 urlpatterns = [
     path('', views.home, name='home'),
