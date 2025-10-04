@@ -142,7 +142,6 @@ class LeakCheckAPIClient:
             logger.error(f"Malformed 'sources' data for username {username}")
             return []
 
-        # Standardize the output format
         results = []
         for source in sources:
             name = source.get("name")
@@ -220,6 +219,18 @@ class HaveIBeenPwnedAPIClient:
             except aiohttp.ClientError as e:
                 logger.error(f"Error fetching data for email {email}: {str(e)}")
                 return []
+
+    def get_breach_info_by_email(self, email: str, timeout: Optional[Union[float, None]] = 10.0) -> Union[List[Dict[str, Optional[str]]], None]:
+        """
+        Retrieve a list of breaches for the given email using the Have I Been Pwned API.
+        """
+        email = email.strip()
+        if not self._validate_email(email):
+            logger.error(f"Invalid email format: {email}")
+            return []
+
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self._fetch_data_haveibeenpwned(email, timeout))
 
     def get_breach_info_hibp(self, email: str, timeout: Optional[Union[float, None]] = 10.0) -> Union[List[Dict[str, Optional[str]]], None]:
         """

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, feedback, reports, support
+from . import views, feedback, reports, support, notifications, recommendations
 from .views import export_report, visualize_breaches
 
 urlpatterns = [

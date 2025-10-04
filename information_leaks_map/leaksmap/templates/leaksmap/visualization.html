@@ -9,55 +9,61 @@
             <p class="lead">Утечки для email: <strong>{{ current_filters.email }}</strong></p>
         {% endif %}
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Фильтры</h5>
-                <form method="get" class="row g-3">
-                    <div class="col-md-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email"
-                               value="{{ current_filters.email }}" placeholder="Введите email">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="data_type" class="form-label">Тип данных</label>
-                        <select class="form-select" id="data_type" name="data_type">
-                            <option value="">Все типы</option>
-                            {% for data_type in data_types %}
-                                <option value="{{ data_type }}" {% if current_filters.data_type == data_type %}selected{% endif %}>
-                                    {{ data_type }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="start_date" class="form-label">Дата с</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date"
-                               value="{{ current_filters.start_date }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="end_date" class="form-label">Дата по</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date"
-                               value="{{ current_filters.end_date }}">
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Применить</button>
-                    </div>
-                </form>
+        <div class="card-body">
+            <h5 class="card-title">Визуализация</h5>
+            <div class="p-3">
+                <!-- Visualization logic implemented -->
+                {{ visualization|safe }}
             </div>
+        </div>
+
+        <div class="card-body">
+            <h5 class="card-title">Фильтры</h5>
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email"
+                           value="{{ current_filters.email }}" placeholder="Введите email">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_type" class="form-label">Тип данных</label>
+                    <select class="form-select" id="data_type" name="data_type">
+                        <option value="">Все типы</option>
+                        {% for data_type in data_types %}
+                            <option value="{{ data_type }}" {% if current_filters.data_type == data_type %}selected{% endif %}>
+                                {{ data_type }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="start_date" class="form-label">Дата с</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date"
+                           value="{{ current_filters.start_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="end_date" class="form-label">Дата по</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date"
+                           value="{{ current_filters.end_date }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Применить</button>
+                </div>
+            </form>
         </div>
 
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Визуализация</h5>
-<div class="p-3">
-    <!-- Visualization logic implemented -->
-                {{ visualization|safe }}
-            {% else %}
-                <div class="alert alert-info">
-                    Нет данных для визуализации. Проверьте фильтры или добавьте данные об утечках.
+                <div class="p-3">
+                    <!-- Visualization logic implemented -->
+                    {{ visualization|safe }}
                 </div>
-            {% endif %}
-        </div>
+                {% if not visualization %}
+                    <div class="alert alert-info">
+                        Нет данных для визуализации. Проверьте фильтры или добавьте данные об утечках.
+                    </div>
+                {% endif %}
             </div>
         </div>
 

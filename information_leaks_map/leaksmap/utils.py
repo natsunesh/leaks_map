@@ -11,6 +11,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 def validate_email(email: str) -> bool:
+    pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(\.[a-zA-Z]{2,})?$)"
+    return re.match(pattern, email) is not None
     """
     Validate an email address format.
 
@@ -20,7 +22,13 @@ def validate_email(email: str) -> bool:
     pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(\.[a-zA-Z]{2,})?$)"
     return re.match(pattern, email) is not None
 
-def sanitize_input(input_str: str) -> str:
+def sanitize_input(input_str: Optional[str]) -> str:
+    if not input_str or not isinstance(input_str, str):
+        return ""
+
+    # Remove potentially harmful characters
+    sanitized = re.sub(r'[<>"\'\`;]', '', input_str)
+    return sanitized
     """
     Sanitize user input to prevent XSS and SQL injection.
 

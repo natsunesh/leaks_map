@@ -1,23 +1,21 @@
-"""
-Views for the LeaksMap application.
-This module contains the view functions for handling web requests.
-"""
 
 from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpRequest
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from typing import Optional, Dict, Any, List, Union
-from .utils import validate_email, sanitize_input, log_security_event
+from .utils import validate_email, sanitize_input, log_security_event, check_password_strength
 from .api_client import LeakCheckAPIClient, HaveIBeenPwnedAPIClient
 from .models import Breach, Report, UserProfile
 from .export import generate_pdf_report, generate_html_report
 from .visualizer import create_breach_visualization, create_breach_visualization_from_api, create_breach_map
 import os
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -30,20 +28,34 @@ def home(request) -> HttpResponse:
     """
     return render(request, 'leaksmap/home.html')
 
-@login_required
-def check_leaks(request) -> JsonResponse:
-    """
-    Check for data breaches associated with a given email address.
-
-    :param request: HttpRequest object.
-    :return: JsonResponse object.
-    """
+@method_decorator(login_required, name='dispatch')
+async def check_leaks(request) -> JsonResponse:
     if request.method not in ['GET', 'POST']:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-    email = request.POST.get('email') if request.method == 'POST' else request.GET.get('email')
+email = request.POST.get('email') if request.method == 'POST' else request.GET.get('email', request.user.email)
+if email is not None:
+    email = request.user.email
+if email is None:
+        if request.user.is_authenticated:
+            log_security_event('invalid_email', request.user.pk, f"Email is None")
+        else:
+            log_security_event('invalid_email', None, f"Email is None")
+        return JsonResponse({'error': 'Invalid email address.'}, status=400)
+    if email is None:
+        if request.user.is_authenticated:
+            log_security_event('invalid_email', request.user.pk, f"Email is None")
+        else:
+            log_security_event('invalid_email', None, f"Email is None")
+        return JsonResponse({'error': 'Invalid email address.'}, status=400)
+
+    email = sanitize_input(email)
     if not validate_email(email):
-        return JsonResponse({'error': 'Invalid email address'}, status=400)
+        if request.user.is_authenticated:
+            log_security_event('invalid_email', request.user.pk, f"Invalid email format: {email}")
+        else:
+            log_security_event('invalid_email', None, f"Invalid email format: {email}")
+        return JsonResponse({'error': 'Invalid email address.'}, status=400)
 
     all_breaches = []
 
@@ -52,7 +64,7 @@ def check_leaks(request) -> JsonResponse:
     if leakcheck_api_key:
         try:
             leakcheck_client = LeakCheckAPIClient(api_key=leakcheck_api_key)
-            leakcheck_breaches = leakcheck_client.get_breach_info(email)
+            leakcheck_breaches = await leakcheck_client._fetch_data_leakcheck(email) or []
             all_breaches.extend(leakcheck_breaches)
         except Exception as e:
             logger.error(f"LeakCheck API error: {str(e)}")
@@ -63,7 +75,7 @@ def check_leaks(request) -> JsonResponse:
     if hibp_api_key:
         try:
             hibp_client = HaveIBeenPwnedAPIClient(api_key=hibp_api_key)
-            hibp_breaches = hibp_client.get_breach_info(email)
+            hibp_breaches = hibp_client.get_breach_info_hibp(email) or []
             all_breaches.extend(hibp_breaches)
         except Exception as e:
             logger.error(f"Have I Been Pwned API error: {str(e)}")
@@ -76,7 +88,7 @@ def check_leaks(request) -> JsonResponse:
                 # Handle date format from API (YYYY-MM)
                 breach_date = breach.get('breach_date', '2000-01-01')
                 if breach_date and len(breach_date) == 7:  # Format: YYYY-MM
-                    breach_date = breach_date + '-01'  # Append day to make it YYYY-MM-DD
+                    breach_date = datetime.strptime(breach_date, '%Y-%m').strftime('%Y-%m-%d')
 
                 # Ensure all required fields are present
                 service_name = breach.get('service_name', 'Unknown')
@@ -86,27 +98,33 @@ def check_leaks(request) -> JsonResponse:
                 location = breach.get('location', 'Unknown')
 
                 # Create or update breach record
-                Breach.objects.create(
+                Breach.objects.get_or_create(
                     user=request.user,
                     service_name=service_name,
                     breach_date=breach_date,
                     description=description,
                     source=source,
                     data_type=data_type,
-                    location=location
+                    location=location,
                 )
             except ValidationError as e:
                 logger.error(f"Validation error: {str(e)}")
                 return JsonResponse({'error': str(e)}, status=400)
 
-        log_security_event('data_breach_found', request.user.id, f"Found {len(all_breaches)} breaches for {email}")
+        if request.user.is_authenticated:
+            log_security_event('data_breach_found', request.user.pk, f"Found {len(all_breaches)} breaches for {email}")
+        else:
+            log_security_event('data_breach_found', None, f"Found {len(all_breaches)} breaches for {email}")
         return JsonResponse({
             'breaches': all_breaches,
             'message': 'Breaches found',
             'redirect_url': f'/visualize_breaches/?email={email}'
         })
     else:
-        log_security_event('no_breaches_found', request.user.id, f"No breaches found for {email}")
+        if request.user.is_authenticated:
+            log_security_event('no_breaches_found', request.user.pk, f"No breaches found for {email}")
+        else:
+            log_security_event('no_breaches_found', None, f"No breaches found for {email}")
         return JsonResponse({'message': 'No breaches found'}, status=200)
 
 @login_required
@@ -122,7 +140,7 @@ def export_report(request) -> Union[HttpResponse, JsonResponse]:
 
     email = request.POST.get('email') if request.method == 'POST' else request.GET.get('email')
     if not validate_email(email):
-        return JsonResponse({'error': 'Invalid email address'}, status=400)
+        return JsonResponse({'error': 'Invalid email address.'}, status=400)
 
     try:
         breaches = Breach.objects.filter(user=request.user, user__email=email)
@@ -157,14 +175,29 @@ def visualize_breaches(request) -> HttpResponse:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     # Get filter parameters from request
-    email = request.GET.get('email')
+email = request.GET.get('email', request.user.email)
+if email is None:
+    email = request.user.email
+if email is None:
+        if request.user.is_authenticated:
+            log_security_event('invalid_email', request.user.pk, f"Email is None")
+        else:
+            log_security_event('invalid_email', None, f"Email is None")
+        return JsonResponse({'error': 'Invalid email address.'}, status=400)
     data_type = request.GET.get('data_type')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
     # Use the user's email if none provided
-    if not email and request.user.is_authenticated:
-        email = request.user.email
+    email = request.user.email
+    if email is None:
+        if request.user.is_authenticated:
+            log_security_event('invalid_email', request.user.pk, f"Email is None")
+        else:
+            log_security_event('invalid_email', None, f"Email is None")
+        return JsonResponse({'error': 'Invalid email address.'}, status=400)
+
+    email = sanitize_input(email)
 
     # Create visualization using the function that supports filters
     try:
@@ -213,8 +246,8 @@ def register(request) -> HttpResponse:
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password1')
+            username = sanitize_input(form.cleaned_data.get('username'))
+            password = sanitize_input(form.cleaned_data.get('password1'))
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
@@ -235,8 +268,8 @@ def user_login(request) -> HttpResponse:
     :return: HttpResponse object.
     """
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = sanitize_input(request.POST.get('username'))
+        password = sanitize_input(request.POST.get('password'))
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
@@ -256,7 +289,7 @@ def user_logout(request) -> HttpResponse:
     :return: HttpResponse object.
     """
     if request.user.is_authenticated:
-        log_security_event('user_logout', request.user.id, f"User logged out: {request.user.username}")
+        log_security_event('user_logout', request.user.pk, f"User logged out: {request.user.username}")
     logout(request)
     messages.success(request, 'Logout successful!')
     return redirect('home')
@@ -282,12 +315,10 @@ def edit_profile(request) -> HttpResponse:
     """
     profile = request.user.userprofile
     if request.method == 'POST':
-        profile.bio = sanitize_input(request.POST.get('bio', ''))
-        profile.location = sanitize_input(request.POST.get('location', ''))
         profile.birth_date = request.POST.get('birth_date', '')
         profile.save()
         messages.success(request, 'Profile updated successfully!')
-        log_security_event('profile_updated', request.user.id, f"Profile updated for user: {request.user.username}")
+        log_security_event('profile_updated', request.user.pk, f"Profile updated for user: {request.user.username}")
         return redirect('view_profile')
 
     return render(request, 'leaksmap/edit_profile.html', {'profile': profile})
