@@ -145,6 +145,7 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'leaksmap' / 'logs' / 'debug.log',
+            'encoding': 'utf-8',
         },
     },
     'loggers': {
