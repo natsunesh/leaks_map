@@ -12,7 +12,7 @@ class Breach(models.Model):
         ('processed', 'Processed'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='breaches')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='breaches')
     service_name = models.CharField(max_length=255)
     breach_date = models.DateField()
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -61,6 +61,7 @@ class Report(models.Model):
     generated_at = models.DateTimeField(auto_now_add=True)
     content = models.JSONField(default=dict)
     report_type = models.CharField(max_length=10, choices=[('pdf', 'PDF'), ('html', 'HTML')], default='pdf')
+    email = models.EmailField(blank=True, null=True)
 
     def __str__(self):
         user_email = self.user.email if self.user else "Unknown User"
@@ -84,7 +85,7 @@ class SupportTicket(models.Model):
         ('closed', 'Closed'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
@@ -111,7 +112,7 @@ class UserProfile(models.Model):
     """
     Model representing a user profile.
     """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.PROTECT)
     bio = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)

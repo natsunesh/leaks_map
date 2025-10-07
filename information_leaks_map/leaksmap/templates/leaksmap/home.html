@@ -20,7 +20,7 @@
                         <h2 class="card-title">Проверка утечек</h2>
                     </div>
         <div class="card-body">
-            <form id="check-leaks-form" method="post" class="needs-validation" novalidate>
+<form id="check-leaks-form" method="post" class="needs-validation" onsubmit="event.preventDefault(); validateForm(event, 'check-leaks-form');">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="email" class="form-label">Введите ваш email:</label>
@@ -41,7 +41,7 @@
                         <h2 class="card-title">Экспорт отчета</h2>
                     </div>
                     <div class="card-body">
-                        <form id="export-report-form" method="post" class="needs-validation" novalidate>
+<form id="export-report-form" method="post" class="needs-validation" onsubmit="event.preventDefault(); validateForm(event, 'export-report-form');">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="export-email" class="form-label">Введите ваш email:</label>
@@ -61,8 +61,26 @@
                         </form>
                 </div>
             </div>
-        </div>
-        </div>
+    <script>
+        function validateForm(event, formId) {
+            const form = document.getElementById(formId);
+            const isValid = form.checkValidity();
+            if (isValid) {
+                form.submit();
+            } else {
+                // Show validation errors
+                const invalidFields = form.querySelectorAll(':invalid');
+                invalidFields.forEach(field => {
+                    const feedback = field.nextElementSibling.querySelector('.invalid-feedback');
+                    if (feedback) {
+                        feedback.style.display = 'block';
+                    }
+                });
+            }
+        }
+    </script>
+</div>
     </div>
+</div>
 
 {% endblock %}

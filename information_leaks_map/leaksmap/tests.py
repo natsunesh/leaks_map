@@ -9,6 +9,7 @@ from .utils import validate_email
 from .api_client import LeakCheckAPIClient, HaveIBeenPwnedAPIClient
 from unittest.mock import patch, MagicMock
 import os
+from datetime import datetime
 
 class TestUtils(TestCase):
     """Test utility functions."""
@@ -23,34 +24,28 @@ class TestModels(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', email='test@example.com', password='testpass123')
-        self.user_profile = UserProfile.objects.create(user=self.user)
+        self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
 
     def test_breach_model(self):
         """Test Breach model."""
         breach = Breach.objects.create(
             user=self.user,
-            service_name="Test Service",
+            service_name="TestService",
             breach_date="2023-01-01",
             description="Test breach"
         )
-        self.assertEqual(str(breach), "Test Service - 2023-01-01 - test@example.com")
-        # Replace None assignment with a dummy user to avoid type errors
-        breach.user = User.objects.get(username='deleted_user')
+        self.assertEqual(str(breach), "TestService - 2023-01-01 - test@example.com")
+        breach.user = None
         breach.save()
-        self.assertEqual(str(breach), "Test Service - 2023-01-01 - Unknown User")
+        self.assertEqual(str(breach), "TestService - 2023-01-01 - Unknown User")
 
     def test_report_model(self):
         """Test Report model."""
-        report = Report.objects.create(
+        report, created = Report.objects.get_or_create(
             user=self.user,
             report_type="pdf"
         )
         self.assertEqual(str(report), f"Report for test@example.com - {report.generated_at}")
-        # Replace None assignment with a dummy user to avoid type errors
-        report.user = User.objects.get(username='deleted_user')
-        report.save()
-        self.assertEqual(str(report), f"Report for Unknown User - {report.generated_at}")
-
         report.user = None
         report.save()
         self.assertEqual(str(report), f"Report for Unknown User - {report.generated_at}")
@@ -61,26 +56,25 @@ class TestModels(TestCase):
 
     def test_feedback_model(self):
         """Test Feedback model."""
-        feedback = Feedback.objects.create(
+        feedback, created = Feedback.objects.get_or_create(
             user=self.user,
-            content="Test feedback"
+            content="Test feedback content"
         )
-        self.assertEqual(str(feedback), "Feedback from testuser - 2023-01-01 00:00:00")
-        # Replace None assignment with a dummy user to avoid type errors
-        feedback.user = User.objects.get(username='deleted_user')
+        self.assertEqual(str(feedback), f"Feedback from testuser - {feedback.created_at}")
+        feedback.user = None
         feedback.save()
-        self.assertEqual(str(feedback), "Feedback from Unknown User - 2023-01-01 00:00:00")
+        self.assertEqual(str(feedback), f"Feedback from Unknown User - {feedback.created_at}")
 
     def test_support_ticket_model(self):
         """Test SupportTicket model."""
-        ticket = SupportTicket.objects.create(
+        ticket, created = SupportTicket.objects.get_or_create(
             user=self.user,
             title="Test Ticket",
-            description="Test description"
+            description="Test ticket description",
+            status="open"
         )
-        self.assertEqual(str(ticket), "Ticket: Test Ticket - open")
-        # Replace None assignment with a dummy user to avoid type errors
-        ticket.user = User.objects.get(username='deleted_user')
+        self.assertEqual(str(ticket), "Ticket: Test Ticket - Open")
+        ticket.user = None
         ticket.save()
         self.assertEqual(str(ticket), "Ticket: Test Ticket - Unknown User")
 
@@ -99,27 +93,38 @@ class TestViews(TestCase):
 
     def test_check_leaks_view(self):
         """Test check leaks view."""
-        response = self.client.get(reverse('check_leaks'))
+        response = self.client.get(reverse('leaksmap:check_leaks'), {'email': 'test@example.com'})
         self.assertEqual(response.status_code, 200)
 
     def test_export_report_view(self):
         """Test export report view."""
-        response = self.client.get(reverse('export_report'))
+        response = self.client.post(reverse('leaksmap:export_report'), {
+            'email': 'test@example.com',
+            'format': 'pdf'
+        })
         self.assertEqual(response.status_code, 200)
 
     def test_visualize_breaches_view(self):
         """Test visualize breaches view."""
-        response = self.client.get(reverse('visualize_breaches'))
+        response = self.client.get(reverse('leaksmap:visualize_breaches'), {'email': 'test@example.com'})
         self.assertEqual(response.status_code, 200)
 
     def test_register_view(self):
         """Test register view."""
-        response = self.client.get(reverse('register'))
-        self.assertEqual(response.status_code, 200)
+        response = self.client.post(reverse('register'), {
+            'username': 'newuser',
+            'password1': 'newpassword',
+            'password2': 'newpassword'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.filter(username='newuser').exists())
 
     def test_login_view(self):
         """Test login view."""
-        response = self.client.get(reverse('login'))
+        response = self.client.post(reverse('login'), {
+            'username': 'testuser',
+            'password': 'testpass123'
+        })
         self.assertEqual(response.status_code, 200)
 
     def test_logout_view(self):
@@ -134,8 +139,12 @@ class TestViews(TestCase):
 
     def test_edit_profile_view(self):
         """Test edit profile view."""
-        response = self.client.get(reverse('edit_profile'))
+        response = self.client.post(reverse('edit_profile'), {
+            'birth_date': '2000-01-01'
+        })
         self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.userprofile.birth_date, datetime.strptime('2000-01-01', '%Y-%m-%d').date())
 
     def test_view_report_view(self):
         """Test view report view."""
@@ -154,22 +163,22 @@ class TestAPIClient(TestCase):
             "success": True,
             "sources": [
                 {
-                    "name": "Test Service",
+                    "name": "TestService",
                     "date": "2023-01-01",
-                    "location": "Test Location",
-                    "data_type": "Test Data Type"
+                    "location": "TestLocation",
+                    "data_type": "TestDataType"
                 }
             ]
         }
         mock_get.return_value = mock_response
 
-        api_key = os.getenv("HIBP_API_KEY", "test_api_key")
+        api_key = "test_api_key"
         client = HaveIBeenPwnedAPIClient(api_key=api_key)
         breaches = client.get_breach_info_by_email("test@example.com") or []
 
         if breaches:
             self.assertEqual(len(breaches), 1)
-            self.assertEqual(breaches[0]["service_name"], "Test Service")
+            self.assertEqual(breaches[0]["service_name"], "TestService")
 
     @patch('requests.get')
     def test_get_breach_info_by_username(self, mock_get):
@@ -180,17 +189,17 @@ class TestAPIClient(TestCase):
             "success": True,
             "sources": [
                 {
-                    "name": "Test Service",
+                    "name": "TestService",
                     "date": "2023-01-01"
                 }
             ]
         }
         mock_get.return_value = mock_response
 
-        api_key = os.getenv("API_KEY", "test_api_key")
+        api_key = "test_api_key"
         client = LeakCheckAPIClient(api_key=api_key)
         breaches = client.get_breach_info_by_username("testuser") or []
 
         self.assertEqual(len(breaches), 1)
         if breaches:
-            self.assertEqual(breaches[0]["service_name"], "Test Service")
+            self.assertEqual(breaches[0]["service_name"], "TestService")

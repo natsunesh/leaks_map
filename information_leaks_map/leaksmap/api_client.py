@@ -25,13 +25,6 @@ class LeakCheckAPIClient:
         self.api_key = os.getenv("API_KEY", api_key)
         self.cache_manager = CacheManager()
 
-    def _validate_email(self, email: str) -> bool:
-        """
-        Простая проверка формата email.
-        """
-        pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
-        return re.match(pattern, email) is not None
-
     async def _fetch_data_leakcheck(self, email: str, timeout: Optional[Union[float, None]] = 10.0) -> Optional[List[Dict[str, Optional[str]]]]:
         """
         Асинхронный метод для выполнения запроса к API LeakCheck.
@@ -71,7 +64,7 @@ class LeakCheckAPIClient:
                     else:
                         logger.info(f"No breaches found for email {email}")
                         return []
-            except aiohttp.ClientError as e:
+            except (aiohttp.ClientError, asyncio.TimeoutError, Exception) as e:
                 logger.error(f"Error fetching data for email {email}: {str(e)}")
                 return []
 

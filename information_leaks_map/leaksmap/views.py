@@ -1,3 +1,4 @@
+import requests
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import authenticate, login, logout
@@ -32,7 +33,7 @@ def home(request) -> HttpResponse:
     """
     return render(request, 'leaksmap/home.html')
 
-@method_decorator(login_required, name='dispatch')
+@login_required
 def check_leaks(request) -> JsonResponse:
     if request.method not in ['GET', 'POST']:
         log_security_event('invalid_request_method', request.user.pk if request.user.is_authenticated else None, f"Invalid request method: {request.method}")
@@ -58,9 +59,9 @@ def check_leaks(request) -> JsonResponse:
             leakcheck_client = LeakCheckAPIClient(api_key=leakcheck_api_key)
             leakcheck_breaches = asyncio.run(leakcheck_client._fetch_data_leakcheck(email)) or []
             all_breaches.extend(leakcheck_breaches)
-        except Exception as e:
-            logger.error(f"LeakCheck API error: {str(e)}")
-            return JsonResponse({'error': f"LeakCheck API error: {str(e)}"}, status=500)
+        except requests.RequestException as e:
+            logger.error(f"LeakCheck API error: {e}")
+            return JsonResponse({'error': f"LeakCheck API error: {e}"}, status=500)
 
     # Have I Been Pwned API
     hibp_api_key: Optional[str] = os.getenv("HIBP_API_KEY")
@@ -70,9 +71,9 @@ def check_leaks(request) -> JsonResponse:
             hibp_client = HaveIBeenPwnedAPIClient(api_key=hibp_api_key)
             hibp_breaches = hibp_client.get_breach_info_hibp(email) or []
             all_breaches.extend(hibp_breaches)
-        except Exception as e:
-            logger.error(f"Have I Been Pwned API error: {str(e)}")
-            return JsonResponse({'error': f"Have I Been Pwned API error: {str(e)}"}, status=500)
+        except requests.RequestException as e:
+            logger.error(f"Have I Been Pwned API error: {e}")
+            return JsonResponse({'error': f"Have I Been Pwned API error: {e}"}, status=500)
 
     if all_breaches:
         # Save breaches to database
@@ -208,7 +209,7 @@ def visualize_breaches(request) -> HttpResponse:
     return render(request, 'leaksmap/visualization.html', context)
 
 def register(request) -> HttpResponse:
-    if request.method == 'POST':
+    if request.method in ['GET', 'POST']:
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
@@ -228,40 +229,14 @@ def register(request) -> HttpResponse:
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-    """
-    Handle user registration.
-
-    :param request: HttpRequest object.
-    :return: HttpResponse object.
-    """
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = sanitize_input(form.cleaned_data.get('username'))
-            password = sanitize_input(form.cleaned_data.get('password1'))
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, 'Registration successful!')
-                log_security_event('user_registration', user.pk, f"New user registered: {username}")
-                return redirect('home')
-            else:
-                messages.error(request, 'Error during registration')
-                return JsonResponse({'error': 'Error during registration'}, status=400)
-        else:
-            return JsonResponse({'error': 'Invalid registration data'}, status=400)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-def user_login(request) -> HttpResponse:
+def user_login(request) -> Union[HttpResponse, JsonResponse]:
     """
     Handle user login.
 
     :param request: HttpRequest object.
-    :return: HttpResponse object.
+    :return: HttpResponse or JsonResponse object.
     """
-    if request.method == 'POST':
+    if request.method in ['GET', 'POST']:
         username = sanitize_input(request.POST.get('username'))
         password = sanitize_input(request.POST.get('password'))
         user = authenticate(username=username, password=password)

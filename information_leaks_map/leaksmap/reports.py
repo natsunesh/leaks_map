@@ -1,6 +1,4 @@
-"""
-Report generation module for creating and viewing reports.
-"""
+
 
 from django.shortcuts import render, redirect
 from django.http import FileResponse
@@ -50,6 +48,18 @@ def view_report(request, report_id):
     try:
         report = Report.objects.get(id=report_id)
         return render(request, 'leaksmap/view_report.html', {'report': report})
+    except Report.DoesNotExist:
+        messages.error(request, 'Report not found')
+        return redirect('home')
+
+def export_report(request, report_id):
+    """
+    Export a specific report.
+    """
+    try:
+        report = Report.objects.get(id=report_id)
+        pdf_file = generate_pdf_report(report)
+        return FileResponse(pdf_file, filename=f'report_{report.email}.pdf')
     except Report.DoesNotExist:
         messages.error(request, 'Report not found')
         return redirect('home')
