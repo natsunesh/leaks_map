@@ -32,6 +32,7 @@ class Breach(models.Model):
         indexes = [
             models.Index(fields=['user']),
             models.Index(fields=['service_name']),
+            models.Index(fields=['status']),  # ИСПРАВЛЕНО: добавлен индекс для поля status
         ]
 
 class Feedback(models.Model):
@@ -51,6 +52,7 @@ class Feedback(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user']),
+            models.Index(fields=['created_at']),  # ИСПРАВЛЕНО: добавлен индекс для поля created_at
         ]
 
 class Report(models.Model):
@@ -73,6 +75,7 @@ class Report(models.Model):
         ordering = ['-generated_at']
         indexes = [
             models.Index(fields=['user']),
+            models.Index(fields=['generated_at']),  # ИСПРАВЛЕНО: добавлен индекс для поля generated_at
         ]
 
 class SupportTicket(models.Model):
@@ -106,6 +109,7 @@ class SupportTicket(models.Model):
         indexes = [
             models.Index(fields=['user']),
             models.Index(fields=['status']),
+            models.Index(fields=['created_at']),  # ИСПРАВЛЕНО: добавлен индекс для поля created_at
         ]
 
 class UserProfile(models.Model):
@@ -125,6 +129,9 @@ class UserProfile(models.Model):
     class Meta:
         verbose_name = "User Profile"
         verbose_name_plural = "User Profiles"
+        indexes = [
+            models.Index(fields=['user']),  # ИСПРАВЛЕНО: добавлен индекс для поля user
+        ]
 
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
@@ -132,8 +139,18 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.create(user=instance)
     else:
         # Check if profile exists before trying to save
-        if hasattr(instance, 'userprofile'):
+        if UserProfile.objects.filter(user=instance).exists():
             instance.userprofile.save()
         else:
             # Create profile if it doesn't exist
             UserProfile.objects.create(user=instance)
+
+    # ИСПРАВЛЕНО: добавлена обработка ошибок при создании или обновлении профиля
+    try:
+        if created:
+            UserProfile.objects.create(user=instance)
+        else:
+            instance.userprofile.save()
+    except Exception as e:
+        # Логирование ошибки
+        print(f"Error creating or updating user profile: {e}")

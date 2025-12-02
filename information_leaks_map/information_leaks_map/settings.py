@@ -15,13 +15,13 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-4ri&80#xfb5&+7j6*bpuo7mt6b-u@ry-f0uyyr#0^4!eo()#vb')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # По умолчанию DEBUG=False для безопасности. Установите DEBUG=True в .env только для разработки
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 # Security settings for production
 if not DEBUG:
@@ -83,7 +83,11 @@ CSRF_USE_SESSIONS = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 # Trusted origins for CSRF (для production добавьте ваш домен)
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip().startswith(('http://', 'https://'))
+]
 
 ROOT_URLCONF = 'information_leaks_map.urls'
 
