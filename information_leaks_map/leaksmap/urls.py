@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import check_leaks, user_logout, user_login, register, edit_profile, view_profile, visualize_breaches, home, chronological_journal, help_page
+from .views import (
+    check_leaks, user_logout, user_login, register, edit_profile,
+    view_profile, visualize_breaches, home, chronological_journal, help_page
+)
 from . import feedback, reports, support
-
-
 
 urlpatterns = [
     path('logout/', user_logout, name='logout'),

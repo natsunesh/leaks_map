@@ -1,7 +1,6 @@
 """
 Feedback module for handling user feedback functionality.
 """
-
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib import messages
@@ -42,7 +41,7 @@ def submit_feedback(request):
         if not feedback_content:
             messages.error(request, 'Feedback cannot be empty')
             return redirect('feedback')
-        
+
         # Validate length
         if len(feedback_content) > 5000:
             messages.error(request, 'Feedback is too long (maximum 5000 characters)')
@@ -50,7 +49,7 @@ def submit_feedback(request):
 
         # Sanitize content to prevent XSS
         sanitized_content = sanitize_feedback_content(feedback_content)
-        
+
         # Log submission
         ip = request.META.get('REMOTE_ADDR', 'unknown')
         logger.info(f"Feedback submitted from IP: {ip}, user: {request.user.username if request.user.is_authenticated else 'anonymous'}")

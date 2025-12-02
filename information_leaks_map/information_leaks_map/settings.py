@@ -15,7 +15,7 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('@9)&p5gslj3(7q6k-stbrx73p8czbk19))g(gfvh$u-^)y&^ua')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # По умолчанию DEBUG=False для безопасности. Установите DEBUG=True в .env только для разработки
