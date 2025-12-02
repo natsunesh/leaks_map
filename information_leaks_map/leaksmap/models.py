@@ -131,4 +131,9 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
     else:
-        instance.userprofile.save()
+        # Check if profile exists before trying to save
+        if hasattr(instance, 'userprofile'):
+            instance.userprofile.save()
+        else:
+            # Create profile if it doesn't exist
+            UserProfile.objects.create(user=instance)

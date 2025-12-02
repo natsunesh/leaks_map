@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Optional, Dict, Any, List, Tuple
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ def create_breach_map(breaches: List[Dict[str, Any]]) -> Optional[str]:
 
         # For simplicity, we'll use random coordinates for demonstration
         # In a real application, you would geocode the location strings
-        import random
         lats = [random.uniform(-90, 90) for _ in locations]
         lons = [random.uniform(-180, 180) for _ in locations]
 
@@ -143,10 +143,15 @@ def create_breach_visualization_from_api(breaches: List[Dict[str, Any]]) -> Opti
 
         # Use different colors for different data types
         unique_data_types = df['data_type'].unique()
+        num_types = len(unique_data_types)
+        if num_types == 0:
+            num_types = 1
+        # Category10 supports up to 10 colors, use max to avoid index errors
+        palette_size = min(num_types, 10)
         color_map = factor_cmap(
             'data_type',
-            palette=Category10[len(unique_data_types)],
-            factors=sorted(unique_data_types)
+            palette=Category10[palette_size] if palette_size > 0 else Category10[1],
+            factors=sorted(unique_data_types) if len(unique_data_types) > 0 else ['Unknown']
         )
 
         # Add scatter plot with different colors by data type
@@ -283,10 +288,15 @@ def create_breach_visualization(user, data_type_filter: Optional[str] = None,
 
         # Use different colors for different data types
         unique_data_types = df['data_type'].unique()
+        num_types = len(unique_data_types)
+        if num_types == 0:
+            num_types = 1
+        # Category10 supports up to 10 colors, use max to avoid index errors
+        palette_size = min(num_types, 10)
         color_map = factor_cmap(
             'data_type',
-            palette=Category10[len(unique_data_types)],
-            factors=sorted(unique_data_types)
+            palette=Category10[palette_size] if palette_size > 0 else Category10[1],
+            factors=sorted(unique_data_types) if len(unique_data_types) > 0 else ['Unknown']
         )
 
         # Add scatter plot with different colors by data type
@@ -330,9 +340,3 @@ def create_breach_visualization(user, data_type_filter: Optional[str] = None,
         logger.error(f"Error creating visualization: {str(e)}")
         return None
 
-def visualize_breaches(request):
-    """
-    Visualize breaches for a given user.
-    """
-    # Implementation here
-    pass

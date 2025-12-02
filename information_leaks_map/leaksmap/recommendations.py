@@ -15,18 +15,24 @@ def generate_checklist(breaches: List[Dict]) -> List[str]:
         List[str]: A list of security recommendations.
     """
     checklist = [
-        "Change your passwords regularly",
-        "Enable two-factor authentication",
-        "Monitor your accounts for suspicious activity",
-        "Use a password manager",
-        "Avoid reusing passwords across different sites"
+        "Измените пароли регулярно",
+        "Включите двухфакторную аутентификацию",
+        "Мониторьте свои аккаунты на наличие подозрительной активности",
+        "Используйте менеджер паролей",
+        "Избегайте повторного использования паролей на разных сайтах"
     ]
 
     if breaches:
-        checklist.append("Review the security of the following breached services:")
+        checklist.append("Проверьте безопасность следующих скомпрометированных сервисов:")
         for breach in breaches:
-            if 'Name' in breach:
-                checklist.append(f"- {breach['Name']}")
+            service_name = None
+            if isinstance(breach, dict):
+                service_name = breach.get('service_name') or breach.get('Name')
+            elif hasattr(breach, 'service_name'):
+                service_name = breach.service_name
+            
+            if service_name:
+                checklist.append(f"- {service_name}")
 
     logger.info("Generated security checklist")
     return checklist
@@ -41,24 +47,36 @@ def get_security_advice(breaches: List[Union[Dict, Breach]]) -> str:
     Returns:
         str: Security advice as a string.
     """
-    advice = "Here are some security recommendations based on the breaches found:\n"
+    advice = "Вот рекомендации по безопасности на основе обнаруженных утечек:\n\n"
 
     if breaches:
-        advice += "You have been affected by the following breaches:\n"
+        advice += "Вы были затронуты следующими утечками:\n"
+        unique_services = set()
         for breach in breaches:
-            if isinstance(breach, dict) and 'service_name' in breach:
-                advice += f"- {breach['service_name']}\n"
+            service_name = None
+            if isinstance(breach, dict):
+                service_name = breach.get('service_name') or breach.get('Name')
             elif isinstance(breach, Breach):
-                advice += f"- {breach.service_name}\n"
+                service_name = breach.service_name
+            
+            if service_name:
+                unique_services.add(service_name)
+        
+        for service in sorted(unique_services):
+            advice += f"- {service}\n"
+        advice += "\n"
     else:
-        advice += "No breaches found. However, it's still important to maintain good security practices.\n"
+        advice += "Утечек не найдено. Однако важно поддерживать хорошие практики безопасности.\n\n"
 
-    advice += "\nGeneral security advice:\n"
-    advice += "1. Change your passwords regularly\n"
-    advice += "2. Enable two-factor authentication\n"
-    advice += "3. Monitor your accounts for suspicious activity\n"
-    advice += "4. Use a password manager\n"
-    advice += "5. Avoid reusing passwords across different sites\n"
+    advice += "Общие рекомендации по безопасности:\n"
+    advice += "1. Регулярно меняйте пароли\n"
+    advice += "2. Включите двухфакторную аутентификацию везде, где это возможно\n"
+    advice += "3. Мониторьте свои аккаунты на наличие подозрительной активности\n"
+    advice += "4. Используйте менеджер паролей для безопасного хранения\n"
+    advice += "5. Избегайте повторного использования паролей на разных сайтах\n"
+    advice += "6. Обновляйте программное обеспечение регулярно\n"
+    advice += "7. Будьте осторожны с фишинговыми письмами и подозрительными ссылками\n"
+    advice += "8. Проверяйте свои финансовые счета на наличие необычных транзакций\n"
 
     logger.info("Generated security advice")
     return advice

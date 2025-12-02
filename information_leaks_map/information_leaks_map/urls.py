@@ -16,8 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+import os
+
+# Изменяем URL админ-панели для безопасности
+# Используем переменную окружения или случайный путь
+admin_path = os.getenv('ADMIN_PATH', 'secure-admin-panel-2024')
+admin.site.site_header = "Администрирование Карты утечек"
+admin.site.site_title = "Админ-панель"
+admin.site.index_title = "Управление системой"
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(f'{admin_path}/', admin.site.urls),  # Измененный путь админ-панели
     path('', include('leaksmap.urls')),
 ]

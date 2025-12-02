@@ -1,11 +1,12 @@
 
-
 from django.shortcuts import render, redirect
 from django.http import FileResponse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .models import Report, Breach
 from .export import generate_pdf_report, generate_html_report
 
+@login_required
 def generate_report(request):
     """
     Generate a report based on user input.
@@ -18,8 +19,8 @@ def generate_report(request):
             messages.error(request, 'Email is required')
             return redirect('generate_report')
 
-        # Get breaches for the email
-        breaches = Breach.objects.filter(email=email)
+        # Get breaches for the email (user is authenticated due to @login_required)
+        breaches = Breach.objects.filter(user=request.user, user__email=email)
 
         if not breaches.exists():
             messages.warning(request, 'No breaches found for this email')
@@ -27,39 +28,51 @@ def generate_report(request):
 
         # Create report
         report = Report.objects.create(
-            user=request.user if request.user.is_authenticated else None,
+            user=request.user,
             email=email
         )
 
         # Generate report in requested format
         if format == 'pdf':
-            pdf_file = generate_pdf_report(report)
-            return FileResponse(pdf_file, filename=f'report_{email}.pdf')
+            response = generate_pdf_report(breaches)
+            return response
         else:
-            html_content = generate_html_report(report)
-            return FileResponse(html_content, filename=f'report_{email}.html')
+            response = generate_html_report(breaches)
+            return response
 
     return render(request, 'leaksmap/generate_report.html')
 
+@login_required
 def view_report(request, report_id):
     """
     View a specific report by ID.
     """
     try:
-        report = Report.objects.get(id=report_id)
+        report = Report.objects.get(id=report_id, user=request.user)
         return render(request, 'leaksmap/view_report.html', {'report': report})
     except Report.DoesNotExist:
         messages.error(request, 'Report not found')
         return redirect('home')
 
+@login_required
 def export_report(request, report_id):
     """
     Export a specific report.
     """
     try:
-        report = Report.objects.get(id=report_id)
-        pdf_file = generate_pdf_report(report)
-        return FileResponse(pdf_file, filename=f'report_{report.email}.pdf')
+        report = Report.objects.get(id=report_id, user=request.user)
+        # Get breaches for the report
+        if report.email:
+            breaches = Breach.objects.filter(user=request.user, user__email=report.email)
+        else:
+            breaches = Breach.objects.filter(user=request.user)
+        
+        if not breaches.exists():
+            messages.warning(request, 'No breaches found for this report')
+            return redirect('view_report', report_id=report_id)
+        
+        response = generate_pdf_report(breaches)
+        return response
     except Report.DoesNotExist:
         messages.error(request, 'Report not found')
         return redirect('home')

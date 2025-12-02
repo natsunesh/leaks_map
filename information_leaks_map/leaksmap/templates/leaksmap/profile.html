@@ -7,9 +7,9 @@
         <h1>Профиль пользователя</h1>
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">{{ profile.user.username }}</h5>
-                <p class="card-text"><strong>Биография:</strong> {{ profile.bio|default:"Не указано" }}</p>
-                <p class="card-text"><strong>Местоположение:</strong> {{ profile.location|default:"Не указано" }}</p>
+                <h5 class="card-title">{{ profile.user.username|escape }}</h5>
+                <p class="card-text"><strong>Биография:</strong> {{ profile.bio|default:"Не указано"|escape }}</p>
+                <p class="card-text"><strong>Местоположение:</strong> {{ profile.location|default:"Не указано"|escape }}</p>
                 <p class="card-text"><strong>Дата рождения:</strong> {{ profile.birth_date|default:"Не указано" }}</p>
                 <a href="{% url 'edit_profile' %}" class="btn btn-primary">Редактировать профиль</a>
             </div>

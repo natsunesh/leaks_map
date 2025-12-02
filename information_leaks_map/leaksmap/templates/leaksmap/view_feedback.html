@@ -8,8 +8,8 @@
         <ul class="list-group">
             {% for feedback in feedbacks %}
                 <li class="list-group-item">
-                    <p>{{ feedback.content }}</p>
-                    <small class="text-muted">От: {{ feedback.user.username|default:'Аноним' }} - {{ feedback.created_at }}</small>
+                    <p>{{ feedback.content|escape|linebreaks }}</p>
+                    <small class="text-muted">От: {{ feedback.user.username|default:'Аноним'|escape }} - {{ feedback.created_at }}</small>
                 </li>
             {% endfor %}
         </ul>
