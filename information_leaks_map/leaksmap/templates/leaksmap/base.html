@@ -22,8 +22,6 @@
 <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'visualize_breaches' %}">Визуализация утечек</a></li>
-                    <li><a href="{% url 'chronological_journal' %}">Хронологический журнал</a></li>
-                    <li><a href="{% url 'help' %}">Помощь</a></li>
                     <li><a href="{% url 'create_ticket' %}">Создать тикет поддержки</a></li>
                     <li><a href="{% url 'view_tickets' %}">Просмотреть тикеты</a></li>
                     <li><a href="{% url 'logout' %}">Выйти</a></li>

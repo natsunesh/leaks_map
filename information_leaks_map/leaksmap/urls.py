@@ -22,6 +22,5 @@ urlpatterns = [
     path('export_report/<int:report_id>/', reports.export_report, name='export_report'),
     path('view_profile/', view_profile, name='view_profile'),
     path('visualize_breaches/', visualize_breaches, name='visualize_breaches'),
-    path('chronological_journal/', chronological_journal, name='chronological_journal'),
-    path('help/', help_page, name='help'),
+    
 ]
