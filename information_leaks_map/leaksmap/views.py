@@ -127,32 +127,22 @@ def user_login(request):
         return HttpResponseRedirect('/')
     return render(request, 'registration/login.html')
 
-def register(request) -> JsonResponse:
-    """
-    Handle user registration.
-    """
+from .forms import RegistrationForm
+
+def register(request):
     if request.method == 'POST':
-        # Получение данных из запроса
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        email = request.POST.get('email')
-
-        # Валидация данных
-        if not username or not password or not email:
-            return JsonResponse({"error": "All fields are required"}, status=400)
-
-        # Создание нового пользователя
-        from django.contrib.auth.models import User
-        from django.contrib.auth.hashers import make_password
-
-        user = User.objects.create(
-            username=username,
-            password=make_password(password),
-            email=email
-        )
-
-        return JsonResponse({"status": "success", "message": "User registered successfully"})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+        print(request.POST)  # Отладочный вывод
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            print(form.cleaned_data)  # Отладочный вывод
+            form.save()
+            return JsonResponse({"status": "success", "message": "User registered successfully"})
+        else:
+            print(form.errors)  # Отладочный вывод
+            return JsonResponse({"error": "Invalid data", "errors": form.errors}, status=400)
+    else:
+        form = RegistrationForm()
+    return render(request, 'registration/register.html', {'form': form})
 
 @csrf_protect
 def edit_profile(request) -> JsonResponse:

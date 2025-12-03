@@ -24,7 +24,4 @@ urlpatterns = [
     path('visualize_breaches/', visualize_breaches, name='visualize_breaches'),
     path('chronological_journal/', chronological_journal, name='chronological_journal'),
     path('help/', help_page, name='help'),
-    path('get_security_advice/', get_security_advice, name='get_security_advice'),
-    path('generate_service_security_advice/', generate_service_security_advice, name='generate_service_security_advice'),
-    path('generate_security_advice_for_breach/', generate_security_advice_for_breach, name='generate_security_advice_for_breach'),
 ]
