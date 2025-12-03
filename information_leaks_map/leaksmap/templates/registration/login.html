@@ -5,7 +5,7 @@
 {% block content %}
     <div class="container mt-5">
         <h1>Вход</h1>
-        <form method="post">
+<form method="post" novalidate>
             {% csrf_token %}
             <div class="mb-3">
                 <label for="username" class="form-label">Имя пользователя:</label>
@@ -15,7 +15,14 @@
                 <label for="password" class="form-label">Пароль:</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Войти</button>
+<button type="submit" class="btn btn-primary">Войти</button>
+{% for field in form %}
+    {% if field.errors %}
+        <div class="alert alert-danger">
+            {{ field.errors }}
+        </div>
+    {% endif %}
+{% endfor %}
         </form>
     </div>
 {% endblock %}

@@ -5,10 +5,12 @@ import os
 import asyncio
 from asgiref.sync import sync_to_async
 from .api_client import LeakCheckAPIClient
-from django.contrib.auth import logout
+from django.contrib.auth import logout, login
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from .models import Breach
 import logging
+from django.shortcuts import render
+from .forms import RegistrationForm, LoginForm
 
 logger = logging.getLogger(__name__)
 
@@ -119,51 +121,51 @@ def user_logout(request) -> HttpResponseRedirect:
     # Always redirect to the register page
     return HttpResponseRedirect('/register/')
 
-from django.shortcuts import render
-
-def user_login(request):
+def login_view(request):
     if request.method == 'POST':
-        # Логика аутентификации
-        return HttpResponseRedirect('/')
-    return render(request, 'registration/login.html')
+        form = LoginForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return HttpResponseRedirect('/')
+        else:
+            return render(request, 'registration/login.html', {'form': form})
+    else:
+        form = LoginForm()
+    return render(request, 'registration/login.html', {'form': form})
 
-from .forms import RegistrationForm
-
-def register(request):
+def register_view(request):
     if request.method == 'POST':
-        print(request.POST)  # Отладочный вывод
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            print(form.cleaned_data)  # Отладочный вывод
-            form.save()
-            return JsonResponse({"status": "success", "message": "User registered successfully"})
+            user = form.save()
+            login(request, user)
+            return HttpResponseRedirect('/')
         else:
-            print(form.errors)  # Отладочный вывод
-            return JsonResponse({"error": "Invalid data", "errors": form.errors}, status=400)
+            return render(request, 'registration/register.html', {'form': form})
     else:
         form = RegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
 
 @csrf_protect
-def edit_profile(request) -> JsonResponse:
+def edit_profile(request) -> HttpResponseRedirect:
     """
     Handle profile editing.
     """
     if request.method == 'POST':
         # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "Edit profile implemented"})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+        return HttpResponseRedirect('/edit_profile/')
+    return HttpResponseRedirect('/edit_profile/')
 
 @login_required
 @csrf_protect
-def view_profile(request) -> JsonResponse:
+def view_profile(request) -> HttpResponseRedirect:
     """
     View user profile.
     """
     if request.method == 'GET':
         # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "View profile implemented"})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+        return HttpResponseRedirect('/view_profile/')
+    return HttpResponseRedirect('/view_profile/')
 
 @login_required
 @csrf_protect
@@ -182,14 +184,13 @@ def visualize_breaches(request) -> JsonResponse:
 
 @login_required
 @csrf_protect
-def home(request) -> JsonResponse:
+def home_view(request):
     """
     Handle home page.
     """
     if request.method == 'GET':
-        # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "Home page implemented"})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+        return render(request, 'leaksmap/home.html')
+    return HttpResponseRedirect('/')
 
 @login_required
 @csrf_protect
