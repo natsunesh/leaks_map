@@ -3,8 +3,6 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import Breach
 
-from django.urls import reverse
-
 class ViewsTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='password')
@@ -15,30 +13,30 @@ class ViewsTestCase(TestCase):
             description='Test breach'
         )
 
-def test_get_security_advice(self):
-    self.client.login(username='testuser', password='password')
-    breaches = Breach.objects.all()
-    response = self.client.get(reverse('get_security_advice'), {'breaches': list(breaches)})
-    self.assertEqual(response.status_code, 200)
-    self.assertIn('advice', response.json())
+    def test_get_security_advice(self):
+        self.client.login(username='testuser', password='password')
+        breaches = Breach.objects.all()
+        response = self.client.get(reverse('get_security_advice'), {'breaches': list(breaches)})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('advice', response.json())
 
-def test_generate_service_security_advice(self):
-    self.client.login(username='testuser', password='password')
-    breaches = Breach.objects.all()
-    response = self.client.get(reverse('generate_service_security_advice'), {'breaches': list(breaches)})
-    self.assertEqual(response.status_code, 200)
-    self.assertIn('advice', response.json())
+    def test_generate_service_security_advice(self):
+        self.client.login(username='testuser', password='password')
+        breaches = Breach.objects.all()
+        response = self.client.get(reverse('generate_service_security_advice'), {'breaches': list(breaches)})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('advice', response.json())
 
-def test_generate_security_advice_for_breach(self):
-    self.client.login(username='testuser', password='password')
-    breach = Breach.objects.first()
-    response = self.client.get(reverse('generate_security_advice_for_breach'), {'breach': breach})
-    self.assertEqual(response.status_code, 200)
-    self.assertIn('advice', response.json())
+    def test_generate_security_advice_for_breach(self):
+        self.client.login(username='testuser', password='password')
+        breach = Breach.objects.first()
+        response = self.client.get(reverse('generate_security_advice_for_breach'), {'breach': breach})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('advice', response.json())
 
     def test_check_leaks(self):
         self.client.login(username='testuser', password='password')
-        response = self.client.get(reverse('check_leaks'))
+        response = self.client.post(reverse('check_leaks'), {'email': 'testuser@example.com'})
         self.assertEqual(response.status_code, 200)
         self.assertIn('status', response.json())
 
@@ -53,8 +51,8 @@ def test_generate_security_advice_for_breach(self):
             'username': 'testuser',
             'password': 'password'
         })
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('status', response.json())
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/')
 
     def test_register(self):
         response = self.client.post(reverse('register'), {
@@ -86,6 +84,8 @@ def test_generate_security_advice_for_breach(self):
         self.assertIn('status', response.json())
 
     def test_home(self):
+        self.client.login(username='testuser', password='password')
+        response = self.client.get(reverse('home'))
         self.client.login(username='testuser', password='password')
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)

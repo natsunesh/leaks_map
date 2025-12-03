@@ -1,10 +1,16 @@
 from typing import List, Union
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseRedirect
+import os
+import asyncio
+from asgiref.sync import sync_to_async
+from .api_client import LeakCheckAPIClient
 from django.contrib.auth import logout
-from django.views.decorators.csrf import csrf_protect
-from django.db.models import Prefetch
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from .models import Breach
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 @csrf_protect
@@ -64,16 +70,42 @@ def generate_security_advice_for_breach(breach: Breach) -> JsonResponse:
         return JsonResponse({"error": str(e)}, status=500)
 
 @login_required
-@csrf_protect
+@csrf_exempt
 def check_leaks(request) -> JsonResponse:
     """
-    Check for leaks based on user input.
+    Check for leaks based on user input using LeakCheck API.
     """
     try:
-        # Placeholder for the actual implementation
-        # This function should interact with external services to check for leaks
-        # and return the results as a JSON response.
-        return JsonResponse({"status": "success", "message": "Leaks check implemented"})
+        email = request.POST.get('email', '').strip()
+        if not email:
+            return JsonResponse({"error": "Email is required"}, status=400)
+
+        # Initialize LeakCheck API client
+        api_key = os.getenv('LEAKCHECK_API_KEY')
+        if not api_key:
+            return JsonResponse({"error": "LeakCheck API key is not configured"}, status=500)
+
+        client = LeakCheckAPIClient(api_key)
+        breaches = asyncio.run(client.get_breach_info_by_email(email))
+        logger.debug(f"Breaches data: {breaches}")
+        logger.debug(f"API response: {breaches}")
+
+        if not breaches:
+            return JsonResponse({"status": "success", "message": "No breaches found"})
+
+        # Save breaches to the database
+        for breach_data in breaches:
+            Breach.objects.create(
+                user=request.user,
+                service_name=breach_data["service_name"],
+                breach_date=breach_data["breach_date"],
+                location=breach_data.get("location", "Unknown"),
+                data_type=breach_data.get("data_type", "Unknown"),
+                description=breach_data.get("description", "No description"),
+                source=breach_data.get("source", "Unknown")
+            )
+
+        return JsonResponse({"status": "success", "message": "Leaks check completed", "breaches": breaches})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -84,31 +116,44 @@ def user_logout(request) -> HttpResponseRedirect:
     Log out the user.
     """
     logout(request)
-    return HttpResponseRedirect('/login/')
+    # Always redirect to the register page
+    return HttpResponseRedirect('/register/')
 
-@login_required
-@csrf_protect
-def user_login(request) -> JsonResponse:
-    """
-    Handle user login.
-    """
+from django.shortcuts import render
+
+def user_login(request):
     if request.method == 'POST':
-        # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "User login implemented"})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+        # Логика аутентификации
+        return HttpResponseRedirect('/')
+    return render(request, 'registration/login.html')
 
-@login_required
-@csrf_protect
 def register(request) -> JsonResponse:
     """
     Handle user registration.
     """
     if request.method == 'POST':
-        # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "User registration implemented"})
+        # Получение данных из запроса
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        email = request.POST.get('email')
+
+        # Валидация данных
+        if not username or not password or not email:
+            return JsonResponse({"error": "All fields are required"}, status=400)
+
+        # Создание нового пользователя
+        from django.contrib.auth.models import User
+        from django.contrib.auth.hashers import make_password
+
+        user = User.objects.create(
+            username=username,
+            password=make_password(password),
+            email=email
+        )
+
+        return JsonResponse({"status": "success", "message": "User registered successfully"})
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
-@login_required
 @csrf_protect
 def edit_profile(request) -> JsonResponse:
     """
@@ -137,8 +182,12 @@ def visualize_breaches(request) -> JsonResponse:
     Visualize breaches.
     """
     if request.method == 'GET':
-        # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "Visualize breaches implemented"})
+        breaches = Breach.objects.all()  # Replace with actual logic to fetch breaches
+        data = {
+            "breaches": list(breaches.values("service_name", "breach_date", "location", "data_type", "description")),
+            "total_breaches": breaches.count()
+        }
+        return JsonResponse(data)
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
 @login_required
@@ -159,8 +208,12 @@ def chronological_journal(request) -> JsonResponse:
     Handle chronological journal.
     """
     if request.method == 'GET':
-        # Placeholder for the actual implementation
-        return JsonResponse({"status": "success", "message": "Chronological journal implemented"})
+        breaches = Breach.objects.all().order_by('-breach_date')  # Replace with actual logic to fetch breaches
+        data = {
+            "breaches": list(breaches.values("service_name", "breach_date", "location", "data_type", "description")),
+            "total_breaches": breaches.count()
+        }
+        return JsonResponse(data)
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
 @login_required

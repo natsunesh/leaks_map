@@ -34,14 +34,14 @@ class LeakCheckAPIClient:
         if not self.api_key:
             raise ValueError("API key must be provided either as parameter or environment variable")
         self.cache_manager = CacheManager()
-    
+
     def _validate_email(self, email: str) -> bool:
         """
         Простая проверка формата email.
         """
         return validate_email(email)
 
-    async def _fetch_data_leakcheck(self, email: str, timeout: Optional[float] = 10.0) -> Optional[List[Dict[str, Optional[str]]]]:
+    async def get_breach_info_by_email(self, email: str, timeout: Optional[float] = 10.0) -> Optional[List[Dict[str, Optional[str]]]]:
         """
         Асинхронный метод для выполнения запроса к API LeakCheck.
         """
@@ -49,7 +49,7 @@ class LeakCheckAPIClient:
         if not self._validate_email(email):
             logger.error(f"Invalid email format: {email}")
             return []
-        
+
         params = {
             "key": self.api_key,
             "check": email,
@@ -166,6 +166,74 @@ class LeakCheckAPIClient:
         return results
 
 class HaveIBeenPwnedAPIClient:
+    async def _fetch_data_haveibeenpwned(self, email: str, timeout: Optional[float] = 10.0) -> Optional[List[Dict[str, Optional[str]]]]:
+        headers = {
+            "hibp-api-key": self.api_key,
+            "user-agent": "LeaksMap"
+        }
+
+        # Use email as part of cache key since headers contain sensitive data
+        cache_key = f"{self.BASE_URL}/breachedaccount/{email}"
+        cache_params = {"email": email}  # Use email as params for cache key
+        cached_data = self.cache_manager.get(cache_key, cache_params)
+        if cached_data:
+            return cached_data
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(f"{self.BASE_URL}/breachedaccount/{email}", headers=headers, timeout=aiohttp.ClientTimeout(total=timeout)) as response:
+                    response.raise_for_status()
+                    data = await response.json()
+                    if data:
+                        standardized_results = []
+                        for breach in data:
+                            name = breach.get("Name")
+                            date = breach.get("BreachDate")
+                            description = breach.get("Description", "No description")
+                            data_classes = breach.get("DataClasses", [])
+                            data_type = ", ".join(data_classes) if data_classes else "Unknown"
+
+                            standardized_results.append({
+                                "service_name": name or "Unknown",
+                                "breach_date": date or "Unknown",
+                                "location": "Unknown",
+                                "data_type": data_type,
+                                "description": description,
+                                "source": "HaveIBeenPwned"
+                            })
+
+                        cache_key = f"{self.BASE_URL}/breachedaccount/{email}"
+                        cache_params = {"email": email}
+                        self.cache_manager.set(cache_key, cache_params, standardized_results)
+                        return standardized_results
+                    else:
+                        logger.info(f"No breaches found for email {email}")
+                        return []
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                logger.error(f"Error fetching data for email {email}: {str(e)}")
+                return []
+            except Exception as e:
+                logger.error(f"Unexpected error fetching data for email {email}: {str(e)}", exc_info=True)
+                return []
+
+        """
+        Retrieve a list of breaches for the given email using the Have I Been Pwned API.
+        """
+        email = email.strip()
+        if not self._validate_email(email):
+            logger.error(f"Invalid email format: {email}")
+            return []
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is already running, we can't use run_until_complete
+                # Use asyncio.run which creates a new event loop
+                return asyncio.run(self._fetch_data_haveibeenpwned(email, timeout))
+            return loop.run_until_complete(self._fetch_data_haveibeenpwned(email, timeout))
+        except RuntimeError:
+            # No event loop, create a new one
+            return asyncio.run(self._fetch_data_haveibeenpwned(email, timeout))
     """
     Клиент для работы с публичным API Have I Been Pwned.
     """
@@ -189,7 +257,7 @@ class HaveIBeenPwnedAPIClient:
         pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
         return re.match(pattern, email) is not None
 
-    async def _fetch_data_haveibeenpwned(self, email: str, timeout: Optional[float] = 10.0) -> Optional[List[Dict[str, Optional[str]]]]:
+    async def get_breach_info_hibp(self, email: str, timeout: Optional[float] = 10.0) -> Optional[List[Dict[str, Optional[str]]]]:
         """
         Асинхронный метод для выполнения запроса к API Have I Been Pwned.
         """
@@ -241,43 +309,3 @@ class HaveIBeenPwnedAPIClient:
             except Exception as e:
                 logger.error(f"Unexpected error fetching data for email {email}: {str(e)}", exc_info=True)
                 return []
-
-    def get_breach_info_by_email(self, email: str, timeout: Optional[float] = 10.0) -> Union[List[Dict[str, Optional[str]]], None]:
-        """
-        Retrieve a list of breaches for the given email using the Have I Been Pwned API.
-        """
-        email = email.strip()
-        if not self._validate_email(email):
-            logger.error(f"Invalid email format: {email}")
-            return []
-
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is already running, we can't use run_until_complete
-                # Use asyncio.run which creates a new event loop
-                return asyncio.run(self._fetch_data_haveibeenpwned(email, timeout))
-            return loop.run_until_complete(self._fetch_data_haveibeenpwned(email, timeout))
-        except RuntimeError:
-            # No event loop, create a new one
-            return asyncio.run(self._fetch_data_haveibeenpwned(email, timeout))
-
-    def get_breach_info_hibp(self, email: str, timeout: Optional[float] = 10.0) -> Union[List[Dict[str, Optional[str]]], None]:
-        """
-        Retrieve a list of breaches for the given email using the Have I Been Pwned API.
-        """
-        email = email.strip()
-        if not self._validate_email(email):
-            logger.error(f"Invalid email format: {email}")
-            return []
-
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is already running, we can't use run_until_complete
-                # Use asyncio.run which creates a new event loop
-                return asyncio.run(self._fetch_data_haveibeenpwned(email, timeout))
-            return loop.run_until_complete(self._fetch_data_haveibeenpwned(email, timeout))
-        except RuntimeError:
-            # No event loop, create a new one
-            return asyncio.run(self._fetch_data_haveibeenpwned(email, timeout))
