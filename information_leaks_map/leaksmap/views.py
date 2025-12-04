@@ -1,6 +1,6 @@
 from typing import List, Union
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 import os
 import asyncio
 from asgiref.sync import sync_to_async
@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from .models import Breach
 import logging
 from django.shortcuts import render
-from .forms import RegistrationForm, LoginForm
+from .forms import RegistrationForm, LoginForm, CheckBreachesForm, ExportReportForm
 
 logger = logging.getLogger(__name__)
 
@@ -74,42 +74,39 @@ def generate_security_advice_for_breach(breach: Breach) -> JsonResponse:
 @login_required
 @csrf_exempt
 def check_leaks(request) -> JsonResponse:
-    """
-    Check for leaks based on user input using LeakCheck API.
-    """
-    try:
-        email = request.POST.get('email', '').strip()
-        if not email:
-            return JsonResponse({"error": "Email is required"}, status=400)
+    if request.method == 'POST':
+        form = CheckBreachesForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            # Initialize LeakCheck API client
+            api_key = os.getenv('LEAKCHECK_API_KEY')
+            if not api_key:
+                return JsonResponse({"error": "LeakCheck API key is not configured"}, status=500)
 
-        # Initialize LeakCheck API client
-        api_key = os.getenv('LEAKCHECK_API_KEY')
-        if not api_key:
-            return JsonResponse({"error": "LeakCheck API key is not configured"}, status=500)
+            client = LeakCheckAPIClient(api_key)
+            breaches = asyncio.run(client.get_breach_info_by_email(email))
+            logger.debug(f"Breaches data: {breaches}")
+            logger.debug(f"API response: {breaches}")
 
-        client = LeakCheckAPIClient(api_key)
-        breaches = asyncio.run(client.get_breach_info_by_email(email))
-        logger.debug(f"Breaches data: {breaches}")
-        logger.debug(f"API response: {breaches}")
+            if not breaches:
+                return JsonResponse({"status": "success", "message": "No breaches found"})
 
-        if not breaches:
-            return JsonResponse({"status": "success", "message": "No breaches found"})
+            # Save breaches to the database
+            for breach_data in breaches:
+                Breach.objects.create(
+                    user=request.user,
+                    service_name=breach_data["service_name"],
+                    breach_date=breach_data["breach_date"],
+                    location=breach_data.get("location", "Unknown"),
+                    data_type=breach_data.get("data_type", "Unknown"),
+                    description=breach_data.get("description", "No description"),
+                    source=breach_data.get("source", "Unknown")
+                )
 
-        # Save breaches to the database
-        for breach_data in breaches:
-            Breach.objects.create(
-                user=request.user,
-                service_name=breach_data["service_name"],
-                breach_date=breach_data["breach_date"],
-                location=breach_data.get("location", "Unknown"),
-                data_type=breach_data.get("data_type", "Unknown"),
-                description=breach_data.get("description", "No description"),
-                source=breach_data.get("source", "Unknown")
-            )
-
-        return JsonResponse({"status": "success", "message": "Leaks check completed", "breaches": breaches})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+            return JsonResponse({"status": "success", "message": "Leaks check completed", "breaches": breaches})
+        else:
+            return JsonResponse({"success": False, "errors": form.errors})
+    return JsonResponse({"error": "Invalid request method"}, status=400)
 
 @login_required
 @csrf_protect
@@ -144,6 +141,8 @@ def register_view(request):
             return render(request, 'registration/register.html', {'form': form})
     else:
         form = RegistrationForm()
+        if request.user.is_authenticated:
+            return HttpResponseRedirect('/')
     return render(request, 'registration/register.html', {'form': form})
 
 @csrf_protect
@@ -170,6 +169,30 @@ def view_profile(request) -> HttpResponseRedirect:
 @login_required
 @csrf_protect
 def visualize_breaches(request) -> JsonResponse:
+    if request.method == 'GET':
+        # Получаем параметры фильтрации и сортировки из запроса
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        search_term = request.GET.get('search')
+        sort_field = request.GET.get('sort')
+
+        # Фильтруем и сортируем утечки
+        breaches = Breach.objects.all()
+        if start_date:
+            breaches = breaches.filter(breach_date__gte=start_date)
+        if end_date:
+            breaches = breaches.filter(breach_date__lte=end_date)
+        if search_term:
+            breaches = breaches.filter(service_name__icontains=search_term)
+        if sort_field:
+            breaches = breaches.order_by(sort_field)
+
+        data = {
+            "breaches": list(breaches.values("service_name", "breach_date", "location", "data_type", "description")),
+            "total_breaches": breaches.count()
+        }
+        return JsonResponse(data)
+    return JsonResponse({"error": "Invalid request method"}, status=400)
     """
     Visualize breaches.
     """
@@ -216,4 +239,29 @@ def help_page(request) -> JsonResponse:
     if request.method == 'GET':
         # Placeholder for the actual implementation
         return JsonResponse({"status": "success", "message": "Help page implemented"})
+    return JsonResponse({"error": "Invalid request method"}, status=400)
+
+@login_required
+@csrf_protect
+def export_report(request) -> HttpResponse:
+    if request.method == 'POST':
+        form = ExportReportForm(request.POST)
+        if form.is_valid():
+            report_type = form.cleaned_data['report_type']
+            breaches = Breach.objects.filter(user=request.user)
+
+            if report_type == 'PDF':
+                response = HttpResponse(content_type='application/pdf')
+                response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+                # Generate PDF report (placeholder)
+                response.write(b"PDF report content")
+                return response
+            elif report_type == 'HTML':
+                response = HttpResponse(content_type='text/html')
+                response['Content-Disposition'] = 'attachment; filename="report.html"'
+                # Generate HTML report (placeholder)
+                response.write("<html><body>HTML report content</body></html>")
+                return response
+        else:
+            return JsonResponse({"success": False, "errors": form.errors})
     return JsonResponse({"error": "Invalid request method"}, status=400)

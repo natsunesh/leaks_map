@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     check_leaks, user_logout, login_view, register_view, edit_profile,
     view_profile, visualize_breaches, home_view, chronological_journal, help_page,
-    get_security_advice, generate_service_security_advice, generate_security_advice_for_breach
+    get_security_advice, generate_service_security_advice, generate_security_advice_for_breach,
+    export_report
 )
 from . import feedback, reports, support
 
@@ -19,8 +20,7 @@ urlpatterns = [
     path('register/', register_view, name='register'),
     path('view_report/<int:report_id>/', reports.view_report, name='view_report'),
     path('edit_profile/', edit_profile, name='edit_profile'),
-    path('export_report/<int:report_id>/', reports.export_report, name='export_report'),
+    path('export_report/', export_report, name='export_report'),
     path('view_profile/', view_profile, name='view_profile'),
     path('visualize_breaches/', visualize_breaches, name='visualize_breaches'),
-    
 ]

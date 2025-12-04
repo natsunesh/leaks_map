@@ -1,4 +1,39 @@
 // Main JavaScript for Leak Map Application
+document.addEventListener('DOMContentLoaded', function() {
+    const filtersForm = document.getElementById('filters-form');
+    const resultsDiv = document.getElementById('leaks-results');
+
+    filtersForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(filtersForm);
+
+        fetch('/visualize_breaches/', {
+            method: 'GET',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.breaches) {
+                resultsDiv.innerHTML = data.breaches.map(breach => `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">${breach.service_name}</h5>
+                            <p class="card-text">${breach.description}</p>
+                            <small class="text-muted">${breach.breach_date} - ${breach.location}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                resultsDiv.innerHTML = '<div class="alert alert-info">Нет данных для визуализации. Проверьте фильтры или добавьте данные об утечках.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке данных:', error);
+            resultsDiv.innerHTML = '<div class="alert alert-danger">Ошибка при загрузке данных. Пожалуйста, попробуйте снова.</div>';
+        });
+    });
+});
 
 // Bootstrap form validation
 document.addEventListener('DOMContentLoaded', function () {
@@ -19,13 +54,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.classList.add('was-validated');
             }, false);
         });
-});
 
 // Additional utility functions
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
+        const cookies = document.cookie.split('; ');
         for (let i = 0; i < cookies.length; i++) {
             const cookie = cookies[i].trim();
             // Does this cookie string begin with the name we want?
@@ -124,11 +158,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification('Ошибка при проверке утечек.', 'danger');
                 console.error('Error:', error);
             });
-        });
+    });
     }
 
     // Export report form
     const exportReportForm = document.getElementById('export-report-form');
+    if (exportReportForm) {
+        exportReportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Add AJAX submission logic here
+            showNotification('Экспорт отчета...', 'info');
+            // Get the email and format from the form
+            const email = document.getElementById('export-email').value;
+            const format = document.getElementById('format').value;
+            // Send AJAX request to the server
+            fetch('/export_report/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `email=${encodeURIComponent(email)}&format=${encodeURIComponent(format)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Отчет успешно экспортирован!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Ошибка при экспорте отчета.', 'danger');
+                console.error('Error:', error);
+            });
+        });
+    }
+});
     if (exportReportForm) {
         exportReportForm.addEventListener('submit', function(e) {
             e.preventDefault();

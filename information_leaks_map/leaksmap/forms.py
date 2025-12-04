@@ -23,6 +23,9 @@ class RegistrationForm(UserCreationForm):
             user.save()
         return user
 
+class CheckBreachesForm(forms.Form):
+    email = forms.EmailField(required=True, max_length=254)
+
 class LoginForm(AuthenticationForm):
     username = forms.CharField(widget=forms.TextInput(attrs={'autofocus': True}))
     password = forms.CharField(
@@ -39,5 +42,11 @@ class LoginForm(AuthenticationForm):
         if not user.is_active:
             raise ValidationError(
                 self.error_messages['inactive'],
-                code='inactive',
+                code='inactive'
             )
+
+class ExportReportForm(forms.Form):
+    report_type = forms.ChoiceField(
+        choices=[('PDF', 'PDF'), ('HTML', 'HTML')],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
