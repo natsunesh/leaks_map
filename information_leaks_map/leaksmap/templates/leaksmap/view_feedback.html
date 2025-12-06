@@ -4,14 +4,75 @@
 
 {% block content %}
     <div class="container mt-5">
-        <h1>Просмотреть отзывы</h1>
-        <ul class="list-group">
-            {% for feedback in feedbacks %}
-                <li class="list-group-item">
-                    <p>{{ feedback.content|escape|linebreaks }}</p>
-                    <small class="text-muted">От: {{ feedback.user.username|default:'Аноним'|escape }} - {{ feedback.created_at }}</small>
-                </li>
-            {% endfor %}
-        </ul>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Просмотреть отзывы</h1>
+            <a href="{% url 'feedback' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Оставить отзыв
+            </a>
+        </div>
+
+        {% if feedbacks %}
+            <ul class="list-group list-group-flush">
+                {% for feedback in feedbacks %}
+                    <li class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ feedback.user.username|default:'Аноним' }}</h5>
+                            <small class="text-muted">{{ feedback.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-2">{{ feedback.content|escape|linebreaks }}</p>
+                        {% if feedback.rating %}
+                            <div class="mb-1">
+                                <small class="text-warning">
+                                    {% for star in "12345"|make_list %}
+                                        {% if forloop.counter <= feedback.rating %}
+                                            ★
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                    ({{ feedback.rating }}/5)
+                                </small>
+                            </div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-item" href="?page=1">&laquo; Первая</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Предыдущая</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Следующая</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                <h3 class="text-muted">Отзывов пока нет</h3>
+                <p class="text-muted">Будьте первым, кто оставит отзыв!</p>
+                <a href="{% url 'feedback' %}" class="btn btn-primary">Оставить отзыв</a>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

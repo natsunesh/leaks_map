@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from dotenv import load_dotenv
 import os
@@ -39,8 +38,8 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
     # Prevent clickjacking
     X_FRAME_OPTIONS = 'DENY'
-    # Content Security Policy (можно настроить более строго)
-    # SECURE_CSP_DEFAULT_SRC = "'self'"
+    # Content Security Policy
+    SECURE_CSP_DEFAULT_SRC = ["'self'"]
 else:
     # Development settings
     SECURE_SSL_REDIRECT = False
@@ -221,8 +220,8 @@ LOGGING = {
 # Cache configuration for rate limiting
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
         'TIMEOUT': 300,  # 5 minutes default
-    }
+    },
 }

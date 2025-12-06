@@ -5,12 +5,22 @@
 {% block content %}
     <div class="container mt-5">
         <h1>Сгенерировать отчет</h1>
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {{ form.errors }}
+        </div>
+        {% endif %}
+        
         <form method="post">
             {% csrf_token %}
+            
             <div class="mb-3">
                 <label for="email" class="form-label">Введите ваш email:</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+                <input type="email" class="form-control" id="email" name="email" 
+                    value="{% if user.email %}{{ user.email }}{% endif %}" required>
             </div>
+            
             <div class="mb-3">
                 <label for="format" class="form-label">Формат отчета:</label>
                 <select class="form-select" id="format" name="format">
@@ -18,7 +28,11 @@
                     <option value="html">HTML</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Сгенерировать</button>
+            
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Сгенерировать</button>
+                <a href="{% url 'home' %}" class="btn btn-secondary">Отмена</a>
+            </div>
         </form>
     </div>
 {% endblock %}

@@ -4,20 +4,84 @@
 
 {% block content %}
     <div class="container mt-5">
-        <h1>Просмотреть отчет</h1>
-        <div class="card">
-            <div class="card-header">
-                <h5>Отчет для {{ report.email }}</h5>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Просмотреть отчет</h1>
+            <div>
+                <a href="{% url 'generate_report' %}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-redo"></i> Новый отчет
+                </a>
+                <a href="#" class="btn btn-success" onclick="downloadReport()">
+                    <i class="fas fa-download"></i> Скачать PDF
+                </a>
             </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Отчет для {{ report.email|escape }}
+                    </h5>
+                    <span class="badge bg-light text-dark fs-6">
+                        {{ report.generated_at|date:"d.m.Y H:i" }}
+                    </span>
+                </div>
+            </div>
+            
             <div class="card-body">
-                <p>Сгенерирован: {{ report.generated_at }}</p>
-                <h6>Утечки:</h6>
-                <ul>
-                    {% for breach in report.breach_set.all %}
-                        <li>{{ breach.service_name }} - {{ breach.breach_date }}</li>
-                    {% endfor %}
-                </ul>
+                {% if report.breach_set.exists %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Обнаружено утечек: {{ report.breach_set.count }}</h6>
+                    </div>
+                    
+                    <h6 class="card-title">
+                        <i class="fas fa-database me-2 text-danger"></i>Найденные утечки
+                    </h6>
+                    <div class="list-group list-group-flush">
+                        {% for breach in report.breach_set.all %}
+                            <div class="list-group-item px-0 border-end-0">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <strong>{{ breach.service_name|escape }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span class="badge bg-secondary">{{ breach.breach_date|date:"d.m.Y" }}</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        {% if breach.data_type %}
+                                            <span class="badge bg-info">{{ breach.data_type|escape }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <i class="fas fa-info-circle text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                        <h4 class="text-success">✅ Утечек не найдено!</h4>
+                        <p class="text-muted">Ваш email защищен от известных утечек данных.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>Сгенерировано: {{ report.generated_at|date:"d.m.Y H:i" }} | 
+                    ID отчета: {{ report.id }}
+                </small>
             </div>
         </div>
     </div>
+
+    <script>
+    function downloadReport() {
+        // Здесь можно добавить логику скачивания PDF
+        alert('Функция скачивания PDF будет реализована в будущем');
+    }
+    </script>
 {% endblock %}

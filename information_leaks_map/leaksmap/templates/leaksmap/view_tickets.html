@@ -10,7 +10,7 @@
                 <li class="list-group-item">
                     <h5>{{ ticket.title|escape }}</h5>
                     <p>{{ ticket.description|escape|linebreaks }}</p>
-                    <small class="text-muted">Статус: {{ ticket.get_status_display|escape }} - Создан: {{ ticket.created_at }}</small>
+                    <small class="text-muted">Статус: {{ ticket.get_status_display|escape }} - Создан: {{ report.generated_at|date:"d.m.Y H:i" }}</small>
                 </li>
             {% endfor %}
         </ul>

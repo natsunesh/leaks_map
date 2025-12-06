@@ -9,8 +9,7 @@
             <div class="card-body">
                 <h5 class="card-title">{{ profile.user.username|escape }}</h5>
                 <p class="card-text"><strong>Биография:</strong> {{ profile.bio|default:"Не указано"|escape }}</p>
-                <p class="card-text"><strong>Местоположение:</strong> {{ profile.location|default:"Не указано"|escape }}</p>
-                <p class="card-text"><strong>Дата рождения:</strong> {{ profile.birth_date|default:"Не указано" }}</p>
+                <p class="card-text"><strong>Аватар:</strong> {% if profile.avatar %}<img src="{{ profile.avatar.url }}" width="100" height="100">{% else %}Не указан{% endif %}</p>
                 <a href="{% url 'edit_profile' %}" class="btn btn-primary">Редактировать профиль</a>
             </div>
         </div>

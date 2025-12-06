@@ -5,21 +5,31 @@
 {% block content %}
     <div class="container mt-5">
         <h1>Редактировать профиль</h1>
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Ошибки в форме:</strong>
+            {{ form.errors }}
+        </div>
+        {% endif %}
+        
         <form method="post">
             {% csrf_token %}
+            
             <div class="mb-3">
                 <label for="bio" class="form-label">Биография:</label>
                 <textarea class="form-control" id="bio" name="bio" rows="3">{{ profile.bio|escape }}</textarea>
             </div>
+
             <div class="mb-3">
-                <label for="location" class="form-label">Местоположение:</label>
-                <input type="text" class="form-control" id="location" name="location" value="{{ profile.location|escape }}">
+                <label for="avatar" class="form-label">Аватар:</label>
+                <input type="file" class="form-control" id="avatar" name="avatar">
             </div>
+            
             <div class="mb-3">
-                <label for="birth_date" class="form-label">Дата рождения:</label>
-                <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ profile.birth_date|date:'Y-m-d' }}">
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <a href="{% url 'profile' %}" class="btn btn-secondary">Отмена</a>
             </div>
-            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
         </form>
     </div>
 {% endblock %}

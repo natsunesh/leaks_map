@@ -5,52 +5,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Отчет об утечках данных</title>
+    <link rel="icon" href="{% static 'IMG/favicon.ico' %}" type="image/x-icon">
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             line-height: 1.6;
+            color: #333;
+        }
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
         }
         h1 {
             color: #333;
             border-bottom: 2px solid #007bff;
             padding-bottom: 10px;
+            margin-bottom: 30px;
         }
         h2 {
             color: #555;
             margin-top: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            margin-top: 0;
+            color: #dc3545;
         }
         .breach-item {
             background: #f8f9fa;
             padding: 15px;
             margin: 10px 0;
             border-left: 4px solid #dc3545;
+            border-radius: 0 5px 5px 0;
         }
         .checklist {
             background: #fff3cd;
             padding: 15px;
             margin: 10px 0;
             border-left: 4px solid #ffc107;
+            border-radius: 0 5px 5px 0;
         }
         .advice {
             background: #d1ecf1;
             padding: 15px;
             margin: 10px 0;
             border-left: 4px solid #17a2b8;
+            border-radius: 0 5px 5px 0;
             white-space: pre-line;
         }
         ul {
             list-style-type: none;
             padding-left: 0;
+            margin: 0;
         }
         li {
-            margin: 5px 0;
-            padding-left: 20px;
+            margin: 8px 0;
+            padding-left: 25px;
+            position: relative;
         }
         li:before {
-            content: "• ";
-            color: #007bff;
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
             font-weight: bold;
+            font-size: 1.1em;
+        }
+        .report-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .no-leaks {
+            background: #d4edda;
+            padding: 20px;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            text-align: center;
+            color: #155724;
         }
     </style>
 </head>
@@ -62,16 +98,19 @@
         {% if breaches %}
             {% for breach in breaches %}
                 <div class="breach-item">
-                    <h3>{{ breach.service_name }}</h3>
-                    <p><strong>Дата утечки:</strong> {{ breach.breach_date }}</p>
+                    <h3>{{ breach.service_name|escape }}</h3>
+                    <p><strong>Дата утечки:</strong> {{ breach.breach_date|date:"d.m.Y" }}</p>
                     {% if breach.data_type %}
-                        <p><strong>Тип данных:</strong> {{ breach.data_type }}</p>
+                        <p><strong>Тип данных:</strong> {{ breach.data_type|escape }}</p>
                     {% endif %}
-                    <p><strong>Описание:</strong> {{ breach.description }}</p>
+                    <p><strong>Описание:</strong> {{ breach.description|escape|linebreaks }}</p>
                 </div>
             {% endfor %}
         {% else %}
-            <p>Утечек не найдено.</p>
+            <div class="no-leaks">
+                <h3>✅ Утечек не найдено!</h3>
+                <p>Ваш email не был замечен в известных базах утечек данных.</p>
+            </div>
         {% endif %}
     </div>
     
@@ -80,7 +119,7 @@
         <div class="checklist">
             <ul>
                 {% for item in checklist %}
-                    <li>{{ item }}</li>
+                    <li>{{ item|escape }}</li>
                 {% endfor %}
             </ul>
         </div>
@@ -89,12 +128,13 @@
     {% if security_advice %}
         <h2>Рекомендации по безопасности</h2>
         <div class="advice">
-            {{ security_advice }}
+            {{ security_advice|linebreaks }}
         </div>
     {% endif %}
     
-    <p style="margin-top: 30px; color: #666; font-size: 0.9em;">
-        Отчет сгенерирован: <script>document.write(new Date().toLocaleString('ru-RU'));</script>
-    </p>
+    <div class="report-footer">
+        <p>Отчет сгенерирован: {{ report_date|default:"сегодня" }}</p>
+        <p class="no-print">© Карта информационных утечек</p>
+    </div>
 </body>
 </html>
