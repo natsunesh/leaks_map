@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout, login
 from django.contrib import messages
 import asyncio
+from django.shortcuts import render, redirect
 from django.db.models import Count
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
@@ -71,6 +72,7 @@ def home_view(request):
 
 # ========== API ENDPOINTS ==========
 @login_required
+@csrf_protect
 @require_http_methods(["POST"])
 def api_check_leaks(request):
     """AJAX проверка утечек (исправлена async проблема)."""
@@ -86,10 +88,10 @@ def api_check_leaks(request):
 
     try:
         client = LeakCheckAPIClient(api_key)
-        # FIXED: Правильный вызов async метода
+       
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        breaches_data = loop.run_until_complete(client.get_breach_info_by_email(email))
+        breaches_data = asyncio.run(client.get_breach_info_by_email(email))
         loop.close()
 
         if not breaches_data:
@@ -98,7 +100,7 @@ def api_check_leaks(request):
                 "count": 0,
                 "message": "Утечки не найдены",
                 "checklist": generate_checklist([]),
-                "advice": generate_security_advice([])
+                
             })
 
         # Сохраняем утечки
@@ -121,8 +123,8 @@ def api_check_leaks(request):
             "status": "success",
             "count": len(breaches_data),
             "breaches": breaches_data,
-            "checklist": generate_checklist(saved_breaches),
-            "advice": generate_security_advice(saved_breaches),
+            "checklist": generate_checklist(saved_breaches)
+            
         })
 
     except Exception as e:
@@ -142,7 +144,7 @@ def api_export_report(request):
         'service_name', 'breach_date', 'data_type', 'description'
     )[:50])
 
-    # Простой HTML без render_to_string
+   
     html_content = f"""
     <!DOCTYPE html>
     <html><head><title>Отчет</title></head>
@@ -171,8 +173,6 @@ def visualize_breaches(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    if email_filter:
-        breaches = breaches.filter(user__email__icontains=email_filter)
     if data_type:
         breaches = breaches.filter(data_type=data_type)
     if start_date:
@@ -207,6 +207,7 @@ def visualize_breaches(request):
 
 # ========== UTILITY FUNCTIONS ==========
 def generate_checklist(breaches: List['Breach']) -> List[str]:
+
     """Генерация чек-листа."""
     return [
         "🔐 Смените пароли на всех сервисах",
@@ -215,14 +216,53 @@ def generate_checklist(breaches: List['Breach']) -> List[str]:
         "📧 Настройте мониторинг почты"
     ]
 
-def generate_security_advice(breaches: List['Breach']) -> str:
-    """Генерация рекомендаций."""
-    if not breaches:
-        return "✅ Email чист! Продолжайте соблюдать безопасность."
 
-    advice = "🚨 Срочно выполните:\n\n"
-    services = {b.service_name for b in breaches[:5]}
-    for service in services:
-        advice += f"• {service}: смените пароль\n"
-    advice += "\n📋 Общие меры:\n• Уникальные пароли\n• 2FA везде\n• Менеджер паролей"
-    return advice
+
+def view_feedback(request):
+    """Просмотр отзывов."""
+    feedbacks = []  # TODO: Feedback.objects.all()
+    return render(request, 'leaksmap/view_feedback.html', {'feedbacks': feedbacks})
+
+def generate_report(request):
+    """Генерация отчета."""
+    return render(request, 'leaksmap/generate_report.html')
+
+@login_required
+def create_ticket(request):
+    """Создать тикет."""
+    if request.method == 'POST':
+        messages.success(request, 'Тикет создан!')
+        return redirect('view_tickets')
+    return render(request, 'leaksmap/create_ticket.html')
+
+@login_required
+def view_tickets(request):
+    """Просмотр тикетов."""
+    tickets = []  # TODO: Ticket.objects.filter(user=request.user)
+    return render(request, 'leaksmap/view_tickets.html', {'tickets': tickets})
+
+def view_report(request, report_id):
+    """Просмотр отчета."""
+    report = None  # TODO: Report.objects.get(id=report_id)
+    return render(request, 'leaksmap/view_report.html', {'report': report})
+
+@login_required
+def edit_profile(request):
+    """Редактировать профиль."""
+    if request.method == 'POST':
+        messages.success(request, 'Профиль обновлен!')
+        return redirect('view_profile')
+    profile = None  # TODO:Profile.objects.get(user=request.user)
+    return render(request, 'leaksmap/edit_profile.html', {'profile': profile})
+
+@login_required
+def view_profile(request):
+    """Просмотр профиля."""
+    breaches_count = Breach.objects.filter(user=request.user).count()
+    return render(request, 'leaksmap/profile.html', {
+        'breaches_count': breaches_count
+    })
+
+def export_report(request):
+    """Страница экспорта отчета."""
+    return redirect('api_export_report')

@@ -1,8 +1,13 @@
 from django.urls import path
 from .views import (
-    check_leaks, user_logout, login_view, register_view, edit_profile,
-    view_profile, visualize_breaches, home_view, chronological_journal, help_page,
-    get_security_advice, generate_service_security_advice, generate_security_advice_for_breach,
+    api_check_leaks,
+    user_logout, 
+    login_view, 
+    register_view, 
+    edit_profile,
+    view_profile, 
+    visualize_breaches, 
+    home_view,     
     export_report
 )
 from . import feedback, reports, support
@@ -10,7 +15,7 @@ from . import feedback, reports, support
 urlpatterns = [
     path('logout/', user_logout, name='logout'),
     path('', home_view, name='home'),
-    path('check_leaks/', check_leaks, name='check_leaks'),
+    path('check_leaks/', api_check_leaks, name='check_leaks'),
     path('feedback/', feedback.submit_feedback, name='feedback'),
     path('view_feedback/', feedback.view_feedback, name='view_feedback'),
     path('generate_report/', reports.generate_report, name='generate_report'),

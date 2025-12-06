@@ -18,7 +18,6 @@
         <nav>
             <ul>
                 <li><a href="{% url 'home' %}">Главная</a></li>
-                <li><a href="{% url 'feedback' %}">Оставить отзыв</a></li>
 <li><a href="{% url 'view_feedback' %}">Просмотреть отзывы</a></li>
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'visualize_breaches' %}">Визуализация утечек</a></li>

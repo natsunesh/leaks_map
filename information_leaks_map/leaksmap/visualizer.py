@@ -35,17 +35,8 @@ def create_breach_map(breaches: List[Dict[str, Any]]) -> Optional[str]:
             logger.warning("No valid locations found for map visualization")
             return None
 
-        # Create a simple scatter plot for map-like visualization
-        p = figure(
-            height=500,
-            width=900,
-            tools="pan,wheel_zoom,box_zoom,reset,save"
-        )
-
-        # For simplicity, we'll use random coordinates for demonstration
-        # In a real application, you would geocode the location strings
-        lats = [random.uniform(-90, 90) for _ in locations]
-        lons = [random.uniform(-180, 180) for _ in locations]
+        # Geocode locations to get latitude and longitude
+        lats, lons = geocode_locations(locations)
 
         source = ColumnDataSource(data=dict(
             lat=lats,
@@ -53,7 +44,13 @@ def create_breach_map(breaches: List[Dict[str, Any]]) -> Optional[str]:
             location=locations
         ))
 
-        # Add circle markers
+        # Create the map plot
+        p = figure(
+            height=500,
+            width=900,
+            tools="pan,wheel_zoom,box_zoom,reset,save"
+        )
+
         p.circle(
             x='lon',
             y='lat',
@@ -62,26 +59,30 @@ def create_breach_map(breaches: List[Dict[str, Any]]) -> Optional[str]:
             alpha=0.7
         )
 
-        # Add HoverTool
         hover = HoverTool()
-        hover.tooltips = [
-            ("Location", "@location")
-        ]
+        hover.tooltips = [("Location", "@location")]
         p.add_tools(hover)
 
-        # Set title
         title = Title()
         title.text = "Карта утечек данных"
         title.text_font_size = "18pt"
         p.title = title
 
-        # Convert the plot to HTML
         script, div = components(p)
         return script + div
 
     except Exception as e:
         logger.error(f"Error creating map visualization: {str(e)}")
         return None
+
+def geocode_locations(locations: List[str]) -> Tuple[List[float], List[float]]:
+    """
+    Geocode locations to get latitude and longitude.
+    This is a placeholder function. Replace with actual geocoding logic.
+    """
+    lats = [random.uniform(-90, 90) for _ in locations]
+    lons = [random.uniform(-180, 180) for _ in locations]
+    return lats, lons
 
 def create_breach_visualization_from_api(breaches: List[Dict[str, Any]]) -> Optional[str]:
     """
@@ -339,4 +340,3 @@ def create_breach_visualization(user, data_type_filter: Optional[str] = None,
     except Exception as e:
         logger.error(f"Error creating visualization: {str(e)}")
         return None
-
