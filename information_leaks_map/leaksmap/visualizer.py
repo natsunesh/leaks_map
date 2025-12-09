@@ -125,7 +125,7 @@ def create_breach_visualization_from_api(breaches: List[Dict[str, Any]]) -> Opti
         service_factor = pd.Categorical(df['service_name'], categories=unique_services)
 
         # Create a ColumnDataSource
-        source = ColumnDataSource(df.assign(service_factor=service_factor))
+        source = ColumnDataSource(df.assign(service_factor=service_factor.codes))
 
         # Create a figure with categorical y-axis
         p = figure(
