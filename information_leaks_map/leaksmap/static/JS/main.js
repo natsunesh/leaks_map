@@ -79,50 +79,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check leaks form (POST)
     const checkLeaksForm = document.getElementById('check-leaks-form');
-    if (checkLeaksForm) {
-        checkLeaksForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email')?.value?.trim();
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                showNotification('Введите корректный email.', 'danger');
-                return;
-            }
+if (checkLeaksForm) {
+    checkLeaksForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email')?.value?.trim();
+        if (!email) return showNotification('Введите email', 'danger');
 
-            showNotification('Проверка утечек...', 'info');
-            const csrfToken = getCookie('csrftoken');
-            
-            
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('csrfmiddlewaretoken', csrfToken); 
+        const csrfToken = window.csrfToken;  // ← ПРОСТО!
+        if (!csrfToken) return showNotification('Перезагрузите страницу', 'danger');
 
-            fetch('/check_leaks/', {
-                method: 'POST',
-                credentials: 'same-origin',
-                body: formData 
-            })
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                if (data.breaches?.length > 0) {
-                    showNotification('Утечки найдены!', 'warning');
-                    displayBreaches(data.breaches);
-                    if (data.redirect_url) {
-                        setTimeout(() => window.location.href = data.redirect_url, 1500);
-                    }
-                } else {
-                    showNotification('Утечек не найдено.', 'success');
-                }
-            })
-            .catch(error => {
-                showNotification('Ошибка проверки: ' + error.message, 'danger');
-                console.error('Error:', error);
-            });
-        });
+        showNotification('Проверка...', 'info');
+        
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        fetch('/check_leaks/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => showNotification('OK!', 'success'))
+        .catch(err => showNotification('Ошибка: ' + err, 'danger'));
+    });
     }
-
     // Export report form (POST) 
     const exportReportForm = document.getElementById('export-report-form');
     if (exportReportForm) {

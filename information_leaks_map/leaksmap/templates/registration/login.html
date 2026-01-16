@@ -25,12 +25,12 @@
 
                         <form method="post" novalidate>
                             {% csrf_token %}
-                            
+
                             <div class="mb-3">
                                 <label for="{{ form.username.id_for_label }}" class="form-label">
                                     <i class="fas fa-user me-2"></i>{{ form.username.label }}
                                 </label>
-                                {{ form.username }}
+                                <input type="text" name="username" class="form-control" placeholder="Имя пользователя" autocomplete="username">
                                 {% if form.username.errors %}
                                     <div class="invalid-feedback d-block">
                                         {{ form.username.errors }}
@@ -42,7 +42,7 @@
                                 <label for="{{ form.password.id_for_label }}" class="form-label">
                                     <i class="fas fa-lock me-2"></i>{{ form.password.label }}
                                 </label>
-                                {{ form.password }}
+                                <input type="password" name="password" class="form-control" placeholder="Пароль" autocomplete="current-password">
                                 {% if form.password.errors %}
                                     <div class="invalid-feedback d-block">
                                         {{ form.password.errors }}
@@ -66,7 +66,7 @@
 
                         <div class="text-center mt-4">
                             <small class="text-muted">
-                                Нет аккаунта? 
+                                Нет аккаунта?
                                 <a href="{% url 'register' %}" class="text-primary fw-bold">Зарегистрироваться</a>
                             </small>
                             <br>
