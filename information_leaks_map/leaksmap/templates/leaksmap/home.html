@@ -3,67 +3,58 @@
 {% block title %}Главная{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <div class="jumbotron text-center">
-            <h1 class="display-4">Добро пожаловать в Карту информационных утечек!</h1>
-            <p class="lead">Ваш надежный помощник в мониторинге и защите от утечек данных</p>
-            <hr class="my-4">
-            <p>Используйте наше приложение для проверки утечек, генерации отчетов и получения поддержки.</p>
-        </div>
+<div class="container mt-5">
+    <div class="jumbotron text-center">
+        <h1 class="display-4">Добро пожаловать в Карту информационных утечек!</h1>
+        <p class="lead">Ваш надежный помощник в мониторинге и защите от утечек данных</p>
+        <hr class="my-4">
+        <p>Используйте наше приложение для проверки утечек, генерации отчетов и получения поддержки.</p>
+    </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h2 class="card-title">Проверка утечек</h2>
-                    </div>
-                    <div class="card-body">
-                        <form id="check-leaks-form" method="post" class="needs-validation" novalidate>
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Введите ваш email:</label>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                       value="{% if user.email %}{{ user.email }}{% endif %}" required>
-                                <div class="invalid-feedback">
-                                    Пожалуйста, введите корректный email.
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Проверить утечки</button>
-                        </form>
-                        <div id="leaks-results" class="mt-3"></div>
-                    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h2 class="card-title">Проверка утечек</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'home' %}">
+                        {% csrf_token %}
+                        <h2>Проверка утечек</h2>
+                        <label for="{{ check_form.email.id_for_label }}">Введите ваш email:</label>
+                        {{ check_form.email }}
+                        <button type="submit" name="check_breaches">
+                            Проверить утечки
+                        </button>
+                    </form>
                 </div>
             </div>
-            
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h2 class="card-title">Экспорт отчета</h2>
-                    </div>
-                    <div class="card-body">
-                        <form id="export-report-form" method="post" class="needs-validation" novalidate>
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="export-email" class="form-label">Введите ваш email:</label>
-                                <input type="email" class="form-control" id="export-email" name="email" required>
-                                <div class="invalid-feedback">
-                                    Пожалуйста, введите корректный email.
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="format" class="form-label">Формат отчета:</label>
-                                <select class="form-select" id="format" name="format" required>
-                                    <option value="pdf">PDF</option>
-                                    <option value="html">HTML</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Экспортировать отчет</button>
-                        </form>
-                    </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h2 class="card-title">Экспорт отчета</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'home' %}">
+                        {% csrf_token %}
+                        <h2>Экспорт отчета</h2>
+                        <p>
+                            {{ export_form.email.label_tag }} {{ export_form.email }}
+                        </p>
+                        <p>
+                            {{ export_form.format.label_tag }} {{ export_form.format }}
+                        </p>
+                        <button type="submit" name="export_report">
+                            Экспортировать отчет
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

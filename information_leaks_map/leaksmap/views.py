@@ -4,19 +4,19 @@ from django.contrib.auth import logout, login
 from django.contrib import messages
 import asyncio
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.db.models import Count
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
 import os
 from .api_client import LeakCheckAPIClient
-from .models import Breach  # Только существующие модели
+from .models import Breach
 from .forms import (
-    RegistrationForm, LoginForm, CheckBreachesForm, ExportReportForm
-)  # Только существующие формы
+    RegistrationForm, LoginForm, BreachCheckForm, ReportExportForm, BreachFilterForm
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -62,13 +62,63 @@ def user_logout(request):
 
 # ========== MAIN VIEWS ==========
 @login_required
-def home_view(request):
-    """Главная страница."""
+def index(request):
+    check_form = BreachCheckForm()
+    export_form = ReportExportForm()
+
+    if request.method == "POST":
+        # Нажата кнопка "Проверить утечки"
+        if "check_breaches" in request.POST:
+            check_form = BreachCheckForm(request.POST)
+            if check_form.is_valid():
+                email = check_form.cleaned_data["email"]
+                # ВАЖНО: редирект на страницу визуализации с email в query
+                url = reverse("visualize_breaches")
+                return redirect(f"{url}?email={email}")
+
+        # Нажата кнопка "Экспортировать отчет"
+        if "export_report" in request.POST:
+            export_form = ReportExportForm(request.POST)
+            if export_form.is_valid():
+                # Здесь можешь использовать mock-генерацию отчета
+                response = generate_mock_report({
+                    'format': export_form.cleaned_data['format'],
+                    'email': export_form.cleaned_data['email']
+                })
+                return response
+            else:
+                messages.error(request, 'Ошибка в форме экспорта отчета.')
+
     context = {
-        'check_form': CheckBreachesForm(),
-        'export_form': ExportReportForm(),
+        "check_form": check_form,
+        "export_form": export_form,
     }
-    return render(request, 'leaksmap/home.html', context)
+    return render(request, "leaksmap/home.html", context)
+
+# Mock-генерация отчета
+def generate_mock_report(data):
+    format_type = data['format']
+    email = data['email']
+
+    if format_type == 'pdf':
+        # Создание PDF отчета (mock)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="report_{email}.pdf"'
+        response.write(f"PDF Report for {email}")
+        return response
+    else:
+        # Создание HTML отчета (mock)
+        html_content = f"""
+        <!DOCTYPE html>
+        <html><head><title>Отчет</title></head>
+        <body>
+            <h1>Отчет об утечках для {email}</h1>
+            <p>Это тестовый отчет в формате HTML.</p>
+        </body></html>
+        """
+        response = HttpResponse(html_content, content_type='text/html')
+        response['Content-Disposition'] = f'attachment; filename="report_{email}.html"'
+        return response
 
 # ========== API ENDPOINTS ==========
 @login_required
@@ -76,7 +126,7 @@ def home_view(request):
 @require_http_methods(["POST"])
 def api_check_leaks(request):
     """AJAX проверка утечек (исправлена async проблема)."""
-    form = CheckBreachesForm(request.POST)
+    form = BreachCheckForm(request.POST)
     if not form.is_valid():
         return JsonResponse({"error": dict(form.errors)}, status=400)
 
@@ -88,7 +138,7 @@ def api_check_leaks(request):
 
     try:
         client = LeakCheckAPIClient(api_key)
-       
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         breaches_data = asyncio.run(client.get_breach_info_by_email(email))
@@ -99,8 +149,7 @@ def api_check_leaks(request):
                 "status": "success",
                 "count": 0,
                 "message": "Утечки не найдены",
-                "checklist": generate_checklist([]),
-                
+                "checklist": generate_checklist([])
             })
 
         # Сохраняем утечки
@@ -124,7 +173,6 @@ def api_check_leaks(request):
             "count": len(breaches_data),
             "breaches": breaches_data,
             "checklist": generate_checklist(saved_breaches)
-            
         })
 
     except Exception as e:
@@ -135,7 +183,7 @@ def api_check_leaks(request):
 @require_http_methods(["POST"])
 def api_export_report(request):
     """AJAX экспорт отчета (убрано render_to_string)."""
-    form = ExportReportForm(request.POST)
+    form = ReportExportForm(request.POST)
     if not form.is_valid():
         return JsonResponse({"error": dict(form.errors)}, status=400)
 
@@ -144,7 +192,6 @@ def api_export_report(request):
         'service_name', 'breach_date', 'data_type', 'description'
     )[:50])
 
-   
     html_content = f"""
     <!DOCTYPE html>
     <html><head><title>Отчет</title></head>
@@ -165,49 +212,34 @@ def api_export_report(request):
 @login_required
 def visualize_breaches(request):
     """Визуализация с фильтрами."""
-    breaches = Breach.objects.filter(user=request.user).order_by('-breach_date')
+    # email может прийти из главной через ?email=...
+    initial_email = request.GET.get("email", "")
 
-    # Фильтры
-    email_filter = request.GET.get('email')
-    data_type = request.GET.get('data_type')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    # Инициализация формы: GET-параметры + initial для email
+    form = BreachFilterForm(
+        request.GET or None,
+        initial={"email": initial_email} if initial_email else None,
+    )
 
-    if data_type:
-        breaches = breaches.filter(data_type=data_type)
-    if start_date:
-        breaches = breaches.filter(breach_date__gte=start_date)
-    if end_date:
-        breaches = breaches.filter(breach_date__lte=end_date)
+    breaches = []
+    if form.is_valid():
+        filters = form.cleaned_data
+        breaches = filter_breaches(MOCK_BREACHES, filters)
 
-    # Подсчет для фильтров
-    results_count = breaches.count()
-
-    # Chart.js данные для визуализации
-    services = breaches.values('service_name').annotate(count=Count('id')).order_by('-count')
-    chart_data = {
-        'labels': [s['service_name'][:15] for s in services],
-        'data': [s['count'] for s in services]
-    }
+    # Данные для графика (например, количество утечек по сервисам)
+    chart_labels = [b["service"] for b in breaches]
+    chart_values = [1 for _ in breaches]  # можно сделать агрегацию по сервисам
 
     context = {
-        'current_filters': {
-            'email': email_filter,
-            'data_type': data_type,
-            'start_date': start_date,
-            'end_date': end_date,
-        },
-        'data_types': list(Breach.objects.filter(user=request.user)
-                          .values_list('data_type', flat=True).distinct()),
-        'results_count': results_count,
-        'chart_data': chart_data,
-        'breaches': breaches[:20]  # Первые 20 для превью
+        "form": form,
+        "breaches": breaches,
+        "chart_labels": chart_labels,
+        "chart_values": chart_values,
     }
-    return render(request, 'leaksmap/visualize_breaches.html', context)
+    return render(request, "leaksmap/visualize_breaches.html", context)
 
 # ========== UTILITY FUNCTIONS ==========
 def generate_checklist(breaches: List['Breach']) -> List[str]:
-
     """Генерация чек-листа."""
     return [
         "🔐 Смените пароли на всех сервисах",
@@ -215,8 +247,6 @@ def generate_checklist(breaches: List['Breach']) -> List[str]:
         "🛡️ Проверьте аккаунты на подозрительную активность",
         "📧 Настройте мониторинг почты"
     ]
-
-
 
 def view_feedback(request):
     """Просмотр отзывов."""
@@ -241,10 +271,10 @@ def view_tickets(request):
     tickets = []  # TODO: Ticket.objects.filter(user=request.user)
     return render(request, 'leaksmap/view_tickets.html', {'tickets': tickets})
 
-def view_report(request, report_id):
+def view_report(request):
     """Просмотр отчета."""
     report = None  # TODO: Report.objects.get(id=report_id)
-    return render(request, 'leaksmap/view_report.html', {'report': report})
+    return HttpResponse(render(request, 'leaksmap/view_report.html', {'report': report}).content)
 
 @login_required
 def edit_profile(request):
@@ -266,3 +296,58 @@ def view_profile(request):
 def export_report(request):
     """Страница экспорта отчета."""
     return redirect('api_export_report')
+
+MOCK_BREACHES = [
+    {
+        "service": "LinkedIn",
+        "date": "2021-04-05",
+        "location": "USA",
+        "type": "passwords",
+        "description": "Утечка учетных записей",
+        "affected_email": "homeisdead.0@gmail.com",
+    },
+    {
+        "service": "Adobe",
+        "date": "2013-10-04",
+        "location": "USA",
+        "type": "emails",
+        "description": "Утечка email-адресов",
+        "affected_email": "homeisdead.0@gmail.com",
+    },
+    {
+        "service": "Yahoo",
+        "date": "2014-09-04",
+        "location": "USA",
+        "type": "passwords",
+        "description": "Утечка паролей",
+        "affected_email": "homeisdead.0@gmail.com",
+    },
+    {
+        "service": "Facebook",
+        "date": "2019-04-04",
+        "location": "USA",
+        "type": "phones",
+        "description": "Утечка номеров телефонов",
+        "affected_email": "homeisdead.0@gmail.com",
+    },
+]
+
+def filter_breaches(all_breaches, filters_dict):
+    """Фильтрация утечек по критериям."""
+    filtered_breaches = all_breaches
+
+    # Фильтр по email
+    if filters_dict.get("email"):
+        filtered_breaches = [b for b in filtered_breaches if b["affected_email"] == filters_dict["email"]]
+
+    # Фильтр по типу данных
+    if filters_dict.get("data_type") and filters_dict["data_type"] != "Все типы":
+        filtered_breaches = [b for b in filtered_breaches if b["type"] == filters_dict["data_type"]]
+
+    # Фильтр по дате
+    if filters_dict.get("start_date"):
+        filtered_breaches = [b for b in filtered_breaches if b["date"] >= filters_dict["start_date"]]
+    if filters_dict.get("end_date"):
+        filtered_breaches = [b for b in filtered_breaches if b["date"] <= filters_dict["end_date"]]
+
+    return filtered_breaches

@@ -1,20 +1,21 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     api_check_leaks,
-    user_logout, 
-    login_view, 
-    register_view, 
+    user_logout,
+    login_view,
+    register_view,
     edit_profile,
-    view_profile, 
-    visualize_breaches, 
-    home_view,     
-    export_report
+    view_profile,
+    visualize_breaches,
+    index,
+    export_report,
+    view_report
 )
 from . import feedback, reports, support
 
 urlpatterns = [
     path('logout/', user_logout, name='logout'),
-    path('', home_view, name='home'),
+    path('', index, name='home'),
     path('check_leaks/', api_check_leaks, name='check_leaks'),
     path('feedback/', feedback.submit_feedback, name='feedback'),
     path('view_feedback/', feedback.view_feedback, name='view_feedback'),
@@ -23,7 +24,7 @@ urlpatterns = [
     path('view_tickets/', support.view_tickets, name='view_tickets'),
     path('login/', login_view, name='login'),
     path('register/', register_view, name='register'),
-    path('view_report/<int:report_id>/', reports.view_report, name='view_report'),
+    path('view_report/', view_report, name='view_report'),
     path('edit_profile/', edit_profile, name='edit_profile'),
     path('export_report/', export_report, name='export_report'),
     path('view_profile/', view_profile, name='view_profile'),

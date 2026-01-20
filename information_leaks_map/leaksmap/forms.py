@@ -23,8 +23,8 @@ class RegistrationForm(UserCreationForm):
             user.save()
         return user
 
-class CheckBreachesForm(forms.Form):
-    email = forms.EmailField(required=True, max_length=254)
+class BreachCheckForm(forms.Form):
+    email = forms.EmailField(label="Введите ваш email")
 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(widget=forms.TextInput(attrs={'autofocus': True}))
@@ -45,8 +45,32 @@ class LoginForm(AuthenticationForm):
                 code='inactive'
             )
 
-class ExportReportForm(forms.Form):
-    report_type = forms.ChoiceField(
-        choices=[('PDF', 'PDF'), ('HTML', 'HTML')],
-        widget=forms.Select(attrs={'class': 'form-control'})
+class ReportExportForm(forms.Form):
+    email = forms.EmailField(label="Введите ваш email")
+    format = forms.ChoiceField(
+        choices=[("pdf", "PDF"), ("html", "HTML")],
+        label="Формат отчета",
+    )
+
+class BreachFilterForm(forms.Form):
+    email = forms.EmailField(required=False, label="Email")
+    data_type = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "Все типы"),
+            ("passwords", "Пароли"),
+            ("emails", "Email-адреса"),
+            ("phones", "Телефоны"),
+        ],
+        label="Тип данных",
+    )
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        label="Начальная дата",
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        label="Конечная дата",
     )
