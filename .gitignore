@@ -6,3 +6,4 @@ information_leaks_map/leaksmap/__pycache__/urls.cpython-313.pyc
 information_leaks_map/leaksmap/__pycache__/models.cpython-313.pyc
 information_leaks_map/leaksmap/__pycache__/views.cpython-313.pyc
 information_leaks_map/leaksmap/__pycache__/forms.cpython-313.pyc
+information_leaks_map/leaksmap/logs/debug.log
