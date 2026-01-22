@@ -1,7 +1,9 @@
 from django import forms
+from .models import SupportTicket
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ValidationError
+from .models import SupportTicket
 
 class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True, max_length=254)
@@ -74,3 +76,14 @@ class BreachFilterForm(forms.Form):
         widget=forms.DateInput(attrs={"type": "date"}),
         label="Конечная дата",
     )
+class SupportTicketForm(forms.ModelForm):
+    class Meta:
+        model = SupportTicket
+        fields = ['title', 'description']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['title'].label = "Заголовок"
+        self.fields['description'].label = "Описание"
+        self.fields['title'].required = True
+        self.fields['description'].required = True

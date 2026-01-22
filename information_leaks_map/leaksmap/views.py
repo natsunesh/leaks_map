@@ -5,18 +5,13 @@ from django.contrib import messages
 import asyncio
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.db.models import Count
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
-from django.core.paginator import Paginator
-from django.utils import timezone
 import os
 from .api_client import LeakCheckAPIClient
 from .models import Breach, Feedback, SupportTicket, Report
-from .forms import (
-    RegistrationForm, LoginForm, BreachCheckForm, ReportExportForm, BreachFilterForm
-)
+from .forms import (RegistrationForm, LoginForm, BreachCheckForm, ReportExportForm, BreachFilterForm,SupportTicketForm)
 import logging
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -266,18 +261,6 @@ def generate_report(request):
     """Генерация отчета."""
     return render(request, 'leaksmap/generate_report.html')
 
-@login_required
-def create_ticket(request):
-    """Создать тикет."""
-    if request.method == 'POST':
-        SupportTicket.objects.create(
-            user=request.user,
-            title=request.POST.get('title'),
-            description=request.POST.get('description')
-        )
-        messages.success(request, 'Тикет создан!')
-        return redirect('view_tickets')
-    return render(request, 'leaksmap/create_ticket.html')
 
 @login_required
 def view_tickets(request):
