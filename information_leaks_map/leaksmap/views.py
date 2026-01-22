@@ -13,11 +13,14 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 import os
 from .api_client import LeakCheckAPIClient
-from .models import Breach
+from .models import Breach, Feedback, SupportTicket, Report
 from .forms import (
     RegistrationForm, LoginForm, BreachCheckForm, ReportExportForm, BreachFilterForm
 )
 import logging
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -102,9 +105,15 @@ def generate_mock_report(data):
 
     if format_type == 'pdf':
         # Создание PDF отчета (mock)
-        response = HttpResponse(content_type='application/pdf')
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        p.drawString(100, 750, f"PDF Report for {email}")
+        p.showPage()
+        p.save()
+        buffer.seek(0)
+
+        response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="report_{email}.pdf"'
-        response.write(f"PDF Report for {email}")
         return response
     else:
         # Создание HTML отчета (mock)
@@ -250,7 +259,7 @@ def generate_checklist(breaches: List['Breach']) -> List[str]:
 
 def view_feedback(request):
     """Просмотр отзывов."""
-    feedbacks = []  # TODO: Feedback.objects.all()
+    feedbacks = Feedback.objects.filter(user=request.user)
     return render(request, 'leaksmap/view_feedback.html', {'feedbacks': feedbacks})
 
 def generate_report(request):
@@ -261,6 +270,11 @@ def generate_report(request):
 def create_ticket(request):
     """Создать тикет."""
     if request.method == 'POST':
+        SupportTicket.objects.create(
+            user=request.user,
+            title=request.POST.get('title'),
+            description=request.POST.get('description')
+        )
         messages.success(request, 'Тикет создан!')
         return redirect('view_tickets')
     return render(request, 'leaksmap/create_ticket.html')
@@ -268,21 +282,27 @@ def create_ticket(request):
 @login_required
 def view_tickets(request):
     """Просмотр тикетов."""
-    tickets = []  # TODO: Ticket.objects.filter(user=request.user)
+    tickets = SupportTicket.objects.filter(user=request.user)
     return render(request, 'leaksmap/view_tickets.html', {'tickets': tickets})
 
 def view_report(request):
     """Просмотр отчета."""
-    report = None  # TODO: Report.objects.get(id=report_id)
-    return HttpResponse(render(request, 'leaksmap/view_report.html', {'report': report}).content)
+    report = Report.objects.filter(user=request.user).last()
+    return render(request, 'leaksmap/view_report.html', {'report': report})
 
 @login_required
 def edit_profile(request):
     """Редактировать профиль."""
     if request.method == 'POST':
+        request.user.profile.bio = request.POST.get('bio')
+        request.user.profile.location = request.POST.get('location')
+        request.user.profile.birth_date = request.POST.get('birth_date')
+        request.user.profile.telegram_id = request.POST.get('telegram_id')
+        request.user.profile.notification_preferences = request.POST.get('notification_preferences')
+        request.user.profile.save()
         messages.success(request, 'Профиль обновлен!')
         return redirect('view_profile')
-    profile = None  # TODO:Profile.objects.get(user=request.user)
+    profile = request.user.profile
     return render(request, 'leaksmap/edit_profile.html', {'profile': profile})
 
 @login_required
