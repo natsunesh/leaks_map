@@ -24,6 +24,11 @@ class Breach(models.Model):
         null=True,
         related_name='breaches'
     )
+    report = models.ForeignKey(
+        'Report',
+        on_delete=models.CASCADE,
+        related_name='breaches'
+    )
     service_name = models.CharField(max_length=255)
     breach_date = models.DateField()
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -131,6 +136,7 @@ class Report(models.Model):
                 validate_email(self.email)
             except ValidationError:
                 raise ValidationError("Invalid email address.")
+
 
 class SupportTicket(models.Model):
     """

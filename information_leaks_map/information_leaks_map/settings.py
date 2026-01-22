@@ -220,7 +220,7 @@ LOGGING = {
 # Cache configuration for rate limiting
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'redis://127.0.0.1:6379/1',
         'TIMEOUT': 300,  # 5 minutes default
     },

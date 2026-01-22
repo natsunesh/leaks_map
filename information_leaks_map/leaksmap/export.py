@@ -9,6 +9,8 @@ from .recommendations import generate_checklist, get_security_advice
 
 logger = logging.getLogger(__name__)
 
+
+
 def generate_pdf_report(breaches):
     """
     Generate a PDF report from breaches.

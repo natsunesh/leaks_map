@@ -32,13 +32,12 @@ def generate_report(request):
             email=email
         )
 
-        # Generate report in requested format
-        if format == 'pdf':
-            response = generate_pdf_report(breaches)
-            return response
-        else:
-            response = generate_html_report(breaches)
-            return response
+        # Add breaches to the report
+        for breach in breaches:
+            breach.report = report
+            breach.save()
+
+        
 
     return render(request, 'leaksmap/generate_report.html')
 
